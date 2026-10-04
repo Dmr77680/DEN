@@ -879,6 +879,10 @@ void NextendoSyncThread(Core::System& system, std::shared_ptr<std::atomic<bool>>
                     app_field = Common::NextendoFriends::GetLocalAppField();
                 }
                 last_app_id = app_id;
+                // DEN_FRIEND_DIAG
+                LOG_INFO(Service_Friend,
+                         "[Nextendo] DIAG push presence status={} app_id={} field_bytes={}",
+                         status, app_id, app_field.size());
                 WebService::NextendoApi::PushPresence(status, app_field, app_id, app_name);
             }
         }
@@ -933,6 +937,25 @@ void IFriendService::GetFriendList(HLERequestContext& ctx) {
     if (friend_offset == 0 && ctx.CanWriteBuffer()) {
         const auto entries = Common::NextendoFriends::Get();
         const auto capacity = ctx.GetWriteBufferNumElements<FriendImpl>();
+        {
+            // DEN_FRIEND_DIAG : pid:statut:octets non nuls du blob de presence
+            static std::mutex diag_lock;
+            static std::string diag_last;
+            std::string dump;
+            for (const auto& e : entries) {
+                std::size_t nonzero = 0;
+                for (const char c : e.app_field) {
+                    nonzero += c != '\0' ? 1 : 0;
+                }
+                dump += fmt::format("{}:{}:{} ", e.pid, e.status, nonzero);
+            }
+            std::scoped_lock diag_guard{diag_lock};
+            if (dump != diag_last) {
+                diag_last = dump;
+                LOG_INFO(Service_Friend, "[Nextendo] DIAG friends seen by game (pid:status:blob) {}",
+                         dump);
+            }
+        }
         std::vector<FriendImpl> list;
         for (const auto& entry : entries) {
             if (list.size() >= capacity) {
