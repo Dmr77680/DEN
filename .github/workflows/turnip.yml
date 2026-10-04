@@ -71,6 +71,8 @@ jobs:
       - name: Compiler
         run: |
           cd mesa
+          # DEN_TURNIP_PKGCFG: aucune bibliotheque de la machine hote ne doit etre vue
+          export PKG_CONFIG_LIBDIR=/nonexistent
           meson setup build --cross-file android-aarch64.txt \
             -Dbuildtype=release -Dplatforms=android -Dplatform-sdk-version=31 \
             -Dandroid-stub=true -Dandroid-libbacktrace=disabled \
