@@ -1939,4 +1939,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     <string name="den_rng_seed_enable">Custom RNG seed</string>
     <string name="den_rng_seed_description">Uses a fixed seed for the random number generator. Required by some Smash Bros. Ultimate online mods (set the seed to 0).</string>
     <string name="den_rng_seed">RNG seed</string>
+    <!-- DEN_FRIEND_NOTIF -->
+    <string name="den_friend_notif">Friend notifications</string>
+    <string name="den_friend_notif_description">Shows a banner when a Nextendo friend comes online (in the menus and in game).</string>
+    <string name="nextendo_friend_online">%1$s is online</string>
 </resources>

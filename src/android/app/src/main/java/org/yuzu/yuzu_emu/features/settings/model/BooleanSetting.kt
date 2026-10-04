@@ -16,6 +16,7 @@ enum class BooleanSetting(override val key: String) : AbstractBooleanSetting {
     RENDERER_USE_SPEED_LIMIT("use_speed_limit"),
     USE_CUSTOM_CPU_TICKS("use_custom_cpu_ticks"),
     USE_CUSTOM_RNG("rng_seed_enabled"), // DEN_RNG_SEED
+    NEXTENDO_FRIEND_NOTIFICATIONS("nextendo_friend_notifications"), // DEN_FRIEND_NOTIF
     SKIP_CPU_INNER_INVALIDATION("skip_cpu_inner_invalidation"),
     FIX_BLOOM_EFFECTS("fix_bloom_effects"),
     EMULATE_BGR565("emulate_bgr565"),

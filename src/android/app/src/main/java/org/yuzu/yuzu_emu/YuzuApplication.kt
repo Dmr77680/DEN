@@ -77,6 +77,8 @@ class YuzuApplication : Application() {
 
         createNotificationChannels()
 
+        org.yuzu.yuzu_emu.utils.NextendoFriendNotifier.start(this) // DEN_FRIEND_NOTIF
+
         // [Nextendo] CA bundle for the account/friends HTTPS API
         Thread { NativeLibrary.exportNextendoCaCerts() }.start()
     }

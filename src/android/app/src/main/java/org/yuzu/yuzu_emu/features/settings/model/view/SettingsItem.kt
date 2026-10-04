@@ -860,6 +860,14 @@ abstract class SettingsItem(
                     max = Int.MAX_VALUE
                 )
             )
+            // DEN_FRIEND_NOTIF
+            put(
+                SwitchSetting(
+                    BooleanSetting.NEXTENDO_FRIEND_NOTIFICATIONS,
+                    titleId = R.string.den_friend_notif,
+                    descriptionId = R.string.den_friend_notif_description
+                )
+            )
             put(
                 SwitchSetting(
                     BooleanSetting.USE_CUSTOM_CPU_TICKS,

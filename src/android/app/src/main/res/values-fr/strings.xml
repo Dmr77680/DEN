@@ -1136,4 +1136,8 @@
     <string name="den_rng_seed_enable">Graine RNG personnalisée</string>
     <string name="den_rng_seed_description">Utilise une graine fixe pour le générateur de nombres aléatoires. Requis par certains mods en ligne de Smash Bros. Ultimate (mettre la graine à 0).</string>
     <string name="den_rng_seed">Graine RNG</string>
+    <!-- DEN_FRIEND_NOTIF -->
+    <string name="den_friend_notif">Notifications d\'amis</string>
+    <string name="den_friend_notif_description">Affiche une bannière quand un ami Nextendo se connecte (dans les menus et en jeu).</string>
+    <string name="nextendo_friend_online">%1$s est en ligne</string>
 </resources>

@@ -92,7 +92,7 @@ object NextendoFriendsDialog {
         return remoteNames.containsKey(id) || KNOWN_TITLES.containsKey(id)
     }
 
-    private fun gameName(appId: String, appName: String): String {
+    fun gameName(appId: String, appName: String): String { // DEN_FRIEND_NOTIF
         if (appName.isNotEmpty()) return appName
         val id = appId.trim().lowercase().removePrefix("0x")
         return remoteNames[id] ?: KNOWN_TITLES[id] ?: appId
