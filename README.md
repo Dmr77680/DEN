@@ -12,11 +12,11 @@ DEN est un fork de l'émulateur Switch **[Eden](https://git.eden-emu.dev/eden-em
 > 1. **Tu utilises la dernière version de DEN** : télécharge `DEN.apk` dans l'onglet [Releases](../../releases). Les anciens APK n'ont pas la connexion par navigateur et ne marchent pas en ligne.
 > 2. **Tu es connecté DANS DEN** : menu Nextendo → « Se connecter à Nextendo ». Ton pseudo doit s'afficher dans ce menu. Être connecté sur le site ne suffit pas.
 > 3. **Une seule session ouverte** : ferme le jeu **et** DEN sur tous tes autres appareils (autre téléphone, console, PC, autre émulateur). Un compte ne peut être en ligne qu'à un seul endroit.
-> 4. **E-mail confirmé** : ton compte doit être activé sur [nextendo.network](https://nextendo.network).
+> 4. **Compte lié au Discord Nextendo** (c'est la raison la plus fréquente du refus) : le jeu en ligne est réservé aux comptes liés à un compte Discord membre du [serveur Nextendo](https://discord.gg/nextendonetwork). Rejoins-le, appuie sur **« Vérifier mon compte »** dans le salon de vérification, puis connecte-toi sur verify.nextendo.network avec ton e-mail et ton mot de passe Nextendo ([guide](https://wiki.nextendo.network/guide/discord-link)). Quitter le serveur Discord supprime la liaison. Vérifie aussi que ton e-mail est confirmé sur [nextendo.network](https://nextendo.network).
 > 5. **Après un plantage** : ferme DEN complètement, attends 2 à 3 minutes, puis relance.
 > 6. **Vérifie que ta console apparaît côté Nextendo** : sur [nextendo.network](https://nextendo.network), clique sur ta photo de profil, puis **Sécurité → « My sessions »**.
 >    Pendant que tu es en ligne dans un jeu, une ligne **« (emulator) · in game »** doit apparaître en plus du navigateur (le nom affiché peut être « Ryujinx (emulator) », c'est normal).
->    Si elle n'apparaît **jamais**, même avec un autre émulateur, le problème vient de ton **compte** et pas de DEN : contacte l'équipe Nextendo sur leur [Discord](https://discord.gg/nextendonetwork) en leur donnant ton pseudo.
+>    Si elle n'apparaît **jamais**, même avec un autre émulateur, le problème vient de ton **compte** et pas de DEN (vérifie d'abord le point 4 : la liaison Discord) : contacte l'équipe Nextendo sur leur [Discord](https://discord.gg/nextendonetwork) en leur donnant ton pseudo.
 >
 > <img src="docs/screenshots/nextendo-security.png" alt="Nextendo : photo de profil, puis Sécurité, bouton My sessions" width="420">
 >
@@ -60,7 +60,7 @@ Pour l'instant, je n'ai pu tester que **Mario Kart 8 Deluxe**, **Super Mario Mak
 
 ## ⚠️ Ce qui ne fonctionne pas (encore)
 
-- **Erreur 2306-0802 / « Unable to connect to the server »** : le plus souvent, tu n'es pas connecté **dans DEN** (voir plus haut). Sinon, vérifie que ton adresse e-mail est confirmée sur nextendo.network, que ton compte est actif et que tu n'es pas déjà en ligne sur un autre appareil.
+- **Erreur 2306-0802 / « Unable to connect to the server »** : le plus souvent, tu n'es pas connecté **dans DEN** (voir plus haut). Sinon, vérifie que ton adresse e-mail est confirmée sur nextendo.network, que ton compte est [lié à Discord](https://wiki.nextendo.network/guide/discord-link), qu'il est actif et que tu n'es pas déjà en ligne sur un autre appareil.
 - **Splatoon 3** : le jeu se lance mais a des problèmes graphiques (limite connue).
 - **Stabilité** : testé surtout sur **Retroid Pocket 5**. Un appareil en surcadençage ou qui chauffe peut avoir des chutes de FPS et des déconnexions. Les émulateurs Android sur PC (BlueStacks, etc.) ne sont pas recommandés : préfère un vrai appareil arm64.
 
@@ -101,11 +101,11 @@ DEN is a fork of the **[Eden](https://git.eden-emu.dev/eden-emu/eden)** Switch e
 > 1. **You use the latest DEN version**: download `DEN.apk` from the [Releases](../../releases) tab. Older APKs do not have the browser sign-in and cannot play online.
 > 2. **You are signed in INSIDE DEN**: Nextendo menu → "Sign in to Nextendo". Your username must show in that menu. Being signed in on the website is not enough.
 > 3. **Only one open session**: close the game **and** DEN on all your other devices (another phone, console, PC, another emulator). An account can only be online in one place.
-> 4. **E-mail confirmed**: your account must be activated on [nextendo.network](https://nextendo.network).
+> 4. **Account linked to the Nextendo Discord** (the most common reason for the refusal): online play is reserved for accounts linked to a Discord account that is a member of the [Nextendo server](https://discord.gg/nextendonetwork). Join it, press **"Verify my account"** in the verification channel, then sign in on verify.nextendo.network with your Nextendo e-mail and password ([guide](https://wiki.nextendo.network/guide/discord-link)). Leaving the Discord server removes the link. Also check that your e-mail is confirmed on [nextendo.network](https://nextendo.network).
 > 5. **After a crash**: fully close DEN, wait 2 to 3 minutes, then relaunch.
 > 6. **Check that your console shows up on Nextendo**: on [nextendo.network](https://nextendo.network), click your profile picture, then **Security → "My sessions"**.
 >    While you are online in a game, an **"(emulator) · in game"** entry must appear next to your browser (the name shown may be "Ryujinx (emulator)", that is normal).
->    If it **never** appears, even with another emulator, the problem comes from your **account**, not from DEN: contact the Nextendo team on their [Discord](https://discord.gg/nextendonetwork) and give them your username.
+>    If it **never** appears, even with another emulator, the problem comes from your **account**, not from DEN (check point 4 first, especially the Discord link): contact the Nextendo team on their [Discord](https://discord.gg/nextendonetwork) and give them your username.
 >
 > <img src="docs/screenshots/nextendo-security.png" alt="Nextendo: profile picture, then Security, My sessions button" width="420">
 >
@@ -147,7 +147,7 @@ So far I have only been able to test **Mario Kart 8 Deluxe**, **Super Mario Make
 
 ## ⚠️ What doesn't work (yet)
 
-- **Error 2306-0802 / "Unable to connect to the server"**: most often you are not signed in **inside DEN** (see above). Otherwise check that your e-mail is confirmed on nextendo.network, that your account is active and that you are not already online on another device.
+- **Error 2306-0802 / "Unable to connect to the server"**: most often you are not signed in **inside DEN** (see above). Otherwise check that your e-mail is confirmed on nextendo.network, that your account is [linked to Discord](https://wiki.nextendo.network/guide/discord-link), that it is active and that you are not already online on another device.
 - **Splatoon 3**: the game launches but has graphical issues (known limitation).
 - **Stability**: tested mainly on a **Retroid Pocket 5**. An overclocked or overheating device may see FPS drops and disconnections. Android emulators on PC (BlueStacks, etc.) are not recommended: use a real arm64 device.
 
@@ -177,3 +177,5 @@ Licensed under **GPL-3.0 or later** (see [LICENSE.txt](./LICENSE.txt)). Original
 <!-- DEN_README_ERRBOX -->
 
 <!-- DEN_README_SESSIONS -->
+
+<!-- DEN_README_DISCORD -->
