@@ -7,6 +7,9 @@
 #include <algorithm>
 #include <array>
 #include <atomic>
+#include <chrono>
+#include <map>
+#include <mutex>
 #include <cstring>
 #include <memory>
 #include <tuple>
@@ -33,6 +36,29 @@
 namespace Service::Sockets {
 
 namespace {
+
+// DEN_PORTKEEPER : sockets UDP fermes par le jeu, gardes quelques secondes pour etre rendus au rebind.
+struct ParkedUdp {
+    std::shared_ptr<Network::SocketBase> socket;
+    std::chrono::steady_clock::time_point expires;
+};
+std::mutex g_udp_keeper_lock;
+std::map<u16, ParkedUdp> g_udp_parked;
+std::map<const Network::SocketBase*, u16> g_udp_bound;
+constexpr std::size_t kMaxParkedUdp = 8;
+
+void PurgeParkedUdpLocked() {
+    const auto now = std::chrono::steady_clock::now();
+    for (auto it = g_udp_parked.begin(); it != g_udp_parked.end();) {
+        if (it->second.expires <= now) {
+            it->second.socket->Close();
+            it = g_udp_parked.erase(it);
+        } else {
+            ++it;
+        }
+    }
+}
+
 
 bool IsConnectionBased(Type type) {
     switch (type) {
@@ -816,7 +842,41 @@ Errno BSD_USA::BindImpl(s32 fd, std::span<const u8> addr) {
     LOG_INFO(Service, "[Nextendo][UDP] Bind fd={} to {}:{}", fd,
              Network::IPv4AddressToString(host_bind.ip), host_bind.portno);
 
+    // DEN_PORTKEEPER : le jeu rouvre un port qu'il vient de fermer -> on lui rend le socket garde
+    if (!file_descriptors[fd]->is_connection_based && !file_descriptors[fd]->is_eventfd &&
+        host_bind.portno != 0) {
+        std::shared_ptr<Network::SocketBase> reused;
+        {
+            std::scoped_lock keeper_guard{g_udp_keeper_lock};
+            PurgeParkedUdpLocked();
+            const auto it = g_udp_parked.find(static_cast<u16>(host_bind.portno));
+            if (it != g_udp_parked.end()) {
+                reused = std::move(it->second.socket);
+                g_udp_parked.erase(it);
+            }
+        }
+        if (reused) {
+            auto fresh = std::move(file_descriptors[fd]->socket);
+            file_descriptors[fd]->socket = reused;
+            if (fresh) {
+                fresh->Close();
+            }
+            {
+                std::scoped_lock keeper_guard{g_udp_keeper_lock};
+                g_udp_bound[reused.get()] = static_cast<u16>(host_bind.portno);
+            }
+            LOG_INFO(Service, "[Nextendo][UDP] Bind fd={} port={} : socket garde rendu (NAT conserve)",
+                     fd, host_bind.portno);
+            return Errno::SUCCESS;
+        }
+    }
+
     const auto bind_result = Translate(file_descriptors[fd]->socket->Bind(host_bind));
+    if (bind_result == Errno::SUCCESS && !file_descriptors[fd]->is_connection_based &&
+        !file_descriptors[fd]->is_eventfd && host_bind.portno != 0) {
+        std::scoped_lock keeper_guard{g_udp_keeper_lock};
+        g_udp_bound[file_descriptors[fd]->socket.get()] = static_cast<u16>(host_bind.portno);
+    }
     LOG_INFO(Service, "[Nextendo][UDP] Bind fd={} port={} -> errno={}", fd, host_bind.portno,
              static_cast<s32>(bind_result));
     return bind_result;
@@ -1189,8 +1249,8 @@ std::pair<s32, Errno> BSD_USA::RecvFromImpl(s32 fd, u32 flags, std::vector<u8>& 
             if (ret > 0) {
                 static std::atomic<u32> rx_count{0};
                 const u32 n = ++rx_count;
-                if (n <= 60 || n % 500 == 0) {
-                    LOG_DEBUG(Service, "[Nextendo][UDP] RecvFrom #{} fd={} len={} from {}:{}", n, fd,
+                if (n <= 600 || n % 500 == 0) { // DEN_UDPLOG
+                    LOG_INFO(Service, "[Nextendo][UDP] RecvFrom #{} fd={} len={} from {}:{}", n, fd,
                              ret, Network::IPv4AddressToString(addr_in.ip), addr_in.portno);
                 }
             }
@@ -1236,10 +1296,10 @@ std::pair<s32, Errno> BSD_USA::SendToImpl(s32 fd, u32 flags, std::span<const u8>
     if (p_addr_in) {
         static std::atomic<u32> tx_count{0};
         const u32 n = ++tx_count;
-        if (n <= 60 || n % 500 == 0 || send_result.first < 0) {
+        if (n <= 600 || n % 500 == 0 || send_result.first < 0) { // DEN_UDPLOG
             static std::atomic<u32> err_count{0};
             if (send_result.first >= 0 || ++err_count <= 30) {
-                LOG_DEBUG(Service, "[Nextendo][UDP] SendTo #{} fd={} len={} to {}:{} -> ret={} errno={}",
+                LOG_INFO(Service, "[Nextendo][UDP] SendTo #{} fd={} len={} to {}:{} -> ret={} errno={}",
                          n, fd, message.size(), Network::IPv4AddressToString(p_addr_in->ip),
                          p_addr_in->portno, send_result.first, static_cast<s32>(send_result.second));
             }
@@ -1257,7 +1317,27 @@ Errno BSD_USA::CloseImpl(s32 fd) {
         return Errno::BADF;
     }
 
-    const Errno bsd_errno = Translate(file_descriptors[fd]->socket->Close());
+    // DEN_PORTKEEPER : on garde 5 s le socket UDP lie au lieu de le fermer
+    bool parked = false;
+    if (!file_descriptors[fd]->is_connection_based && !file_descriptors[fd]->is_eventfd) {
+        std::scoped_lock keeper_guard{g_udp_keeper_lock};
+        PurgeParkedUdpLocked();
+        const auto bound = g_udp_bound.find(file_descriptors[fd]->socket.get());
+        if (bound != g_udp_bound.end()) {
+            const u16 port = bound->second;
+            g_udp_bound.erase(bound);
+            if (file_descriptors[fd]->socket.use_count() == 1 &&
+                g_udp_parked.size() < kMaxParkedUdp && !g_udp_parked.contains(port)) {
+                g_udp_parked[port] = ParkedUdp{
+                    file_descriptors[fd]->socket,
+                    std::chrono::steady_clock::now() + std::chrono::seconds(5)};
+                parked = true;
+                LOG_INFO(Service, "[Nextendo][UDP] Close fd={} port={} : socket garde 5 s", fd, port);
+            }
+        }
+    }
+    const Errno bsd_errno =
+        parked ? Errno::SUCCESS : Translate(file_descriptors[fd]->socket->Close());
     if (bsd_errno != Errno::SUCCESS) {
         return bsd_errno;
     }
