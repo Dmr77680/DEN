@@ -6,6 +6,17 @@ DEN est un fork de l'émulateur Switch **[Eden](https://git.eden-emu.dev/eden-em
 
 > Projet personnel et non officiel. Il n'est affilié ni à l'équipe d'Eden, ni à Citron, ni à Nextendo, ni à Nintendo.
 
+> [!IMPORTANT]
+> ### 🚨 Tu as l'erreur **2306-0802** (« Unable to connect to the server ») ? Vérifie ces 5 points, dans l'ordre :
+>
+> 1. **Tu utilises la dernière version de DEN** : télécharge `DEN.apk` dans l'onglet [Releases](../../releases). Les anciens APK n'ont pas la connexion par navigateur et ne marchent pas en ligne.
+> 2. **Tu es connecté DANS DEN** : menu Nextendo → « Se connecter à Nextendo ». Ton pseudo doit s'afficher dans ce menu. Être connecté sur le site ne suffit pas.
+> 3. **Une seule session ouverte** : ferme le jeu **et** DEN sur tous tes autres appareils (autre téléphone, console, PC, autre émulateur). Un compte ne peut être en ligne qu'à un seul endroit.
+> 4. **E-mail confirmé** : ton compte doit être activé sur [nextendo.network](https://nextendo.network).
+> 5. **Après un plantage** : ferme DEN complètement, attends 2 à 3 minutes, puis relance.
+>
+> Toujours bloqué ? Envoie tes logs : ferme DEN, rouvre-le, puis **Paramètres → « Partager les logs de débogage »** (c'est le fichier `eden_log.txt.old`).
+
 <table>
 <tr><td align="center" width="50%"><img src="docs/screenshots/games.jpg" alt="Liste des jeux : joueurs en ligne et badge de mise à jour" width="100%"><br><sub>Liste des jeux : joueurs en ligne et badge de mise à jour</sub></td><td align="center" width="50%"><img src="docs/screenshots/menu.jpg" alt="Menu Nextendo : amis, import de Mii, compte" width="100%"><br><sub>Menu Nextendo : amis, import de Mii, compte</sub></td></tr>
 <tr><td align="center" width="50%"><img src="docs/screenshots/online.jpg" alt="Mario Kart 8 Deluxe : mode en ligne" width="100%"><br><sub>Mario Kart 8 Deluxe : mode en ligne</sub></td><td align="center" width="50%"><img src="docs/screenshots/lobby.jpg" alt="Salon en ligne avec d'autres joueurs" width="100%"><br><sub>Salon en ligne avec d'autres joueurs</sub></td></tr>
@@ -77,6 +88,17 @@ DEN is a fork of the **[Eden](https://git.eden-emu.dev/eden-emu/eden)** Switch e
 
 > Personal, unofficial project. Not affiliated with the Eden team, Citron, Nextendo or Nintendo.
 
+> [!IMPORTANT]
+> ### 🚨 Getting error **2306-0802** ("Unable to connect to the server")? Check these 5 things, in order:
+>
+> 1. **You use the latest DEN version**: download `DEN.apk` from the [Releases](../../releases) tab. Older APKs do not have the browser sign-in and cannot play online.
+> 2. **You are signed in INSIDE DEN**: Nextendo menu → "Sign in to Nextendo". Your username must show in that menu. Being signed in on the website is not enough.
+> 3. **Only one open session**: close the game **and** DEN on all your other devices (another phone, console, PC, another emulator). An account can only be online in one place.
+> 4. **E-mail confirmed**: your account must be activated on [nextendo.network](https://nextendo.network).
+> 5. **After a crash**: fully close DEN, wait 2 to 3 minutes, then relaunch.
+>
+> Still stuck? Send your logs: close DEN, reopen it, then **Settings → "Share debug logs"** (this is the `eden_log.txt.old` file).
+
 <table>
 <tr><td align="center" width="50%"><img src="docs/screenshots/games.jpg" alt="Games list: online players and update badge" width="100%"><br><sub>Games list: online players and update badge</sub></td><td align="center" width="50%"><img src="docs/screenshots/menu.jpg" alt="Nextendo menu: friends, Mii import, account" width="100%"><br><sub>Nextendo menu: friends, Mii import, account</sub></td></tr>
 <tr><td align="center" width="50%"><img src="docs/screenshots/online.jpg" alt="Mario Kart 8 Deluxe: online mode" width="100%"><br><sub>Mario Kart 8 Deluxe: online mode</sub></td><td align="center" width="50%"><img src="docs/screenshots/lobby.jpg" alt="Online lobby with other players" width="100%"><br><sub>Online lobby with other players</sub></td></tr>
@@ -138,3 +160,4 @@ Run the **Build Android** GitHub Actions workflow (*Actions* tab). The APK comes
 
 Licensed under **GPL-3.0 or later** (see [LICENSE.txt](./LICENSE.txt)). Original copyright notices are preserved.
 <!-- DEN_README_V2 -->
+<!-- DEN_README_ERRBOX -->
