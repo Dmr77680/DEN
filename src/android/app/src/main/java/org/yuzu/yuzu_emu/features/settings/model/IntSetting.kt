@@ -50,6 +50,7 @@ enum class IntSetting(override val key: String) : AbstractIntSetting {
     RENDERER_SAMPLE_SHADING("sample_shading_fraction"),
     FAST_CPU_TIME("fast_cpu_time"),
     CPU_TICKS("cpu_ticks"),
+    RNG_SEED("rng_seed"), // DEN_RNG_SEED
     FAST_GPU_TIME("fast_gpu_time"),
     GPU_UNSWIZZLE_TEXTURE_SIZE("gpu_unswizzle_texture_size"),
     GPU_UNSWIZZLE_STREAM_SIZE("gpu_unswizzle_stream_size"),

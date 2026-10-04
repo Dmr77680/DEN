@@ -505,6 +505,8 @@ class SettingsFragmentPresenter(
             add(IntSetting.LANGUAGE_INDEX.key)
             add(BooleanSetting.USE_CUSTOM_RTC.key)
             add(LongSetting.CUSTOM_RTC.key)
+            add(BooleanSetting.USE_CUSTOM_RNG.key) // DEN_RNG_SEED
+            add(IntSetting.RNG_SEED.key)
 
             add(HeaderSetting(R.string.clocks))
             add(IntSetting.FAST_CPU_TIME.key)

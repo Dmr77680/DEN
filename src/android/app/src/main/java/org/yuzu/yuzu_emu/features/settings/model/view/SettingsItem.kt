@@ -842,6 +842,24 @@ abstract class SettingsItem(
                     valuesId = R.array.clockValues
                 )
             )
+            // DEN_RNG_SEED
+            put(
+                SwitchSetting(
+                    BooleanSetting.USE_CUSTOM_RNG,
+                    titleId = R.string.den_rng_seed_enable,
+                    descriptionId = R.string.den_rng_seed_description
+                )
+            )
+            put(
+                SpinBoxSetting(
+                    IntSetting.RNG_SEED,
+                    titleId = R.string.den_rng_seed,
+                    descriptionId = 0,
+                    valueHint = R.string.den_rng_seed,
+                    min = 0,
+                    max = Int.MAX_VALUE
+                )
+            )
             put(
                 SwitchSetting(
                     BooleanSetting.USE_CUSTOM_CPU_TICKS,
