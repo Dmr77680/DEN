@@ -154,6 +154,13 @@ static std::optional<std::string> GetNextendoRedirectIp(const std::string& host)
         return server_ip;
     }
 
+    // DEN_CTR: Activision titles (Crash Team Racing Nitro-Fueled) reach Demonware, not Nintendo:
+    // auth over TLS, lobby/NAT discovery on 3074 and the stun.<region> responders.
+    if (host == "demonware.net" || host.ends_with(".demonware.net")) {
+        LOG_INFO(Service, "[Nextendo] Redirecting Demonware host '{}' -> '{}'", host, server_ip);
+        return server_ip;
+    }
+
     return std::nullopt;
 }
 
