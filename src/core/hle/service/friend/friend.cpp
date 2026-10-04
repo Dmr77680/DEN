@@ -70,10 +70,6 @@ static_assert(offsetof(FriendImpl, is_valid) == 0x128);
 
 // [Nextendo] InGame never leaves "0" for a hosted private battle even once NAT resolution is
 // confirmed (nextendo_nat_rewrite.h fixes the station data itself). Same-length in-place fix.
-// DEN_FRIEND_JOIN: true between DeclareOpenOnlinePlaySession and DeclareCloseOnlinePlaySession.
-// On a real console the friend list only offers "join" for friends whose presence is OnlinePlay.
-std::atomic<bool> g_online_play_open{false};
-
 bool FixupInGameFlag(std::string& app_field) {
     if (!Common::NextendoNat::GetObservedExternalIp()) {
         return false;
@@ -215,15 +211,11 @@ FriendImpl MakeFriend(const Common::NextendoFriends::Entry& entry) {
     std::memcpy(out.nickname.data(), entry.name.data(), length);
 
     out.presence.user_id = out.user_id;
-    // DEN_FRIEND_FLAG : comme Ryujinx-Nextendo, tout ami en ligne est presente au jeu comme
-    // OnlinePlay (2) et "dans cette application"; un ami hors ligne reste Offline (0). Avec le
-    // statut brut "Online" (1), Mario Kart 8 Deluxe affiche l'ami sans le drapeau Rejoindre.
-    const bool friend_online = entry.status > 0;
-    out.presence.status = friend_online ? 2U : 0U;
+    out.presence.status = static_cast<u32>(entry.status);
     out.presence.last_time_online_timestamp = 0x7FFFFFFFFFFFFFFFLL;
     // Marks the friend as being in THIS application, without which the game asks for zero friend
     // PIDs and never queries their session.
-    out.presence.same_presence_group_application = friend_online ? 1 : 0;
+    out.presence.same_presence_group_application = 1;
 
     const auto blob = std::min(entry.app_field.size(), out.presence.app_key_value.size());
     std::memcpy(out.presence.app_key_value.data(), entry.app_field.data(), blob);
@@ -879,10 +871,6 @@ void NextendoSyncThread(Core::System& system, std::shared_ptr<std::atomic<bool>>
                     app_field = Common::NextendoFriends::GetLocalAppField();
                 }
                 last_app_id = app_id;
-                // DEN_FRIEND_DIAG
-                LOG_INFO(Service_Friend,
-                         "[Nextendo] DIAG push presence status={} app_id={} field_bytes={}",
-                         status, app_id, app_field.size());
                 WebService::NextendoApi::PushPresence(status, app_field, app_id, app_name);
             }
         }
@@ -937,25 +925,6 @@ void IFriendService::GetFriendList(HLERequestContext& ctx) {
     if (friend_offset == 0 && ctx.CanWriteBuffer()) {
         const auto entries = Common::NextendoFriends::Get();
         const auto capacity = ctx.GetWriteBufferNumElements<FriendImpl>();
-        {
-            // DEN_FRIEND_DIAG : pid:statut:octets non nuls du blob de presence
-            static std::mutex diag_lock;
-            static std::string diag_last;
-            std::string dump;
-            for (const auto& e : entries) {
-                std::size_t nonzero = 0;
-                for (const char c : e.app_field) {
-                    nonzero += c != '\0' ? 1 : 0;
-                }
-                dump += fmt::format("{}:{}:{} ", e.pid, e.status, nonzero);
-            }
-            std::scoped_lock diag_guard{diag_lock};
-            if (dump != diag_last) {
-                diag_last = dump;
-                LOG_INFO(Service_Friend, "[Nextendo] DIAG friends seen by game (pid:status:blob) {}",
-                         dump);
-            }
-        }
         std::vector<FriendImpl> list;
         for (const auto& entry : entries) {
             if (list.size() >= capacity) {
@@ -1002,10 +971,7 @@ void IFriendService::CheckBlockedUserListAvailability(HLERequestContext& ctx) {
 }
 
 void IFriendService::DeclareCloseOnlinePlaySession(HLERequestContext& ctx) {
-    // DEN_FRIEND_JOIN
-    g_online_play_open = false;
-    Common::NextendoFriends::SetLocalStatus(Common::NextendoFriends::PresenceOnline);
-    LOG_INFO(Service_Friend, "[Nextendo] DeclareCloseOnlinePlaySession -> presence Online");
+    LOG_WARNING(Service_Friend, "(STUBBED) DeclareCloseOnlinePlaySession called");
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(ResultSuccess);
 }
@@ -1033,10 +999,6 @@ void IFriendService::UpdateUserPresence(HLERequestContext& ctx) {
             LOG_INFO(Service_Friend,
                      "[Nextendo] ARMS JoinMode indicates an active session; bumping status to "
                      "OnlinePlay (raw status floors at Online otherwise)");
-        }
-        // DEN_FRIEND_JOIN: keep the "joinable" status while an online play session is open
-        if (g_online_play_open.load()) {
-            status = std::max<s32>(status, Common::NextendoFriends::PresenceOnlinePlay);
         }
         Common::NextendoFriends::SetLocalPresence(status, app_field);
         LOG_INFO(Service_Friend, "[Nextendo] UpdateUserPresence status={} -> {} app_field={}",
@@ -1283,10 +1245,7 @@ void IFriendService::GetProfileListV2(HLERequestContext& ctx) {
 }
 
 void IFriendService::DeclareOpenOnlinePlaySession(HLERequestContext& ctx) {
-    // DEN_FRIEND_JOIN
-    g_online_play_open = true;
-    Common::NextendoFriends::SetLocalStatus(Common::NextendoFriends::PresenceOnlinePlay);
-    LOG_INFO(Service_Friend, "[Nextendo] DeclareOpenOnlinePlaySession -> presence OnlinePlay");
+    LOG_WARNING(Service_Friend, "(STUBBED) DeclareOpenOnlinePlaySession called");
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(ResultSuccess);
 }

@@ -5,6 +5,7 @@
 // SPDX-FileCopyrightText: 2018 yuzu Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
+#include <atomic>
 #include <algorithm>
 #include <cstring>
 #include <mutex>
@@ -968,8 +969,13 @@ bool Memory::InvalidateNCE(Common::ProcessAddress vaddr, size_t size) {
     u8* const ptr = impl->GetPointerImpl(
         GetInteger(vaddr),
         [&] {
-            LOG_ERROR(HW_Memory, "Unmapped InvalidateNCE for {} bytes @ {:#x}", size,
-                      GetInteger(vaddr));
+            // DEN_NCELOG : seulement les 20 premieres occurrences, puis une ligne tous les 100000
+            static std::atomic<u64> den_nce_count{0};
+            const u64 den_n = ++den_nce_count;
+            if (den_n <= 20 || den_n % 100000 == 0) {
+                LOG_ERROR(HW_Memory, "Unmapped InvalidateNCE for {} bytes @ {:#x} (occurrence {})",
+                          size, GetInteger(vaddr), den_n);
+            }
             mapped = false;
         },
         [&] { rasterizer = true; });
