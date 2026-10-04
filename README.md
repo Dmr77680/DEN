@@ -7,13 +7,20 @@ DEN est un fork de l'émulateur Switch **[Eden](https://git.eden-emu.dev/eden-em
 > Projet personnel et non officiel. Il n'est affilié ni à l'équipe d'Eden, ni à Citron, ni à Nextendo, ni à Nintendo.
 
 > [!IMPORTANT]
-> ### 🚨 Tu as l'erreur **2306-0802** (« Unable to connect to the server ») ? Vérifie ces 5 points, dans l'ordre :
+> ### 🚨 Tu as l'erreur **2306-0802** (« Unable to connect to the server ») ? Vérifie ces 6 points, dans l'ordre :
 >
 > 1. **Tu utilises la dernière version de DEN** : télécharge `DEN.apk` dans l'onglet [Releases](../../releases). Les anciens APK n'ont pas la connexion par navigateur et ne marchent pas en ligne.
 > 2. **Tu es connecté DANS DEN** : menu Nextendo → « Se connecter à Nextendo ». Ton pseudo doit s'afficher dans ce menu. Être connecté sur le site ne suffit pas.
 > 3. **Une seule session ouverte** : ferme le jeu **et** DEN sur tous tes autres appareils (autre téléphone, console, PC, autre émulateur). Un compte ne peut être en ligne qu'à un seul endroit.
 > 4. **E-mail confirmé** : ton compte doit être activé sur [nextendo.network](https://nextendo.network).
 > 5. **Après un plantage** : ferme DEN complètement, attends 2 à 3 minutes, puis relance.
+> 6. **Vérifie que ta console apparaît côté Nextendo** : sur [nextendo.network](https://nextendo.network), clique sur ta photo de profil, puis **Sécurité → « My sessions »**.
+>    Pendant que tu es en ligne dans un jeu, une ligne **« (emulator) · in game »** doit apparaître en plus du navigateur (le nom affiché peut être « Ryujinx (emulator) », c'est normal).
+>    Si elle n'apparaît **jamais**, même avec un autre émulateur, le problème vient de ton **compte** et pas de DEN : contacte l'équipe Nextendo sur leur [Discord](https://discord.gg/nextendonetwork) en leur donnant ton pseudo.
+>
+> <img src="docs/screenshots/nextendo-security.png" alt="Nextendo : photo de profil, puis Sécurité, bouton My sessions" width="420">
+>
+> <img src="docs/screenshots/nextendo-sessions.png" alt="Active sessions : le navigateur et l'émulateur en jeu" width="480">
 >
 > Toujours bloqué ? Envoie tes logs : ferme DEN, rouvre-le, puis **Paramètres → « Partager les logs de débogage »** (c'est le fichier `eden_log.txt.old`).
 
@@ -89,13 +96,20 @@ DEN is a fork of the **[Eden](https://git.eden-emu.dev/eden-emu/eden)** Switch e
 > Personal, unofficial project. Not affiliated with the Eden team, Citron, Nextendo or Nintendo.
 
 > [!IMPORTANT]
-> ### 🚨 Getting error **2306-0802** ("Unable to connect to the server")? Check these 5 things, in order:
+> ### 🚨 Getting error **2306-0802** ("Unable to connect to the server")? Check these 6 things, in order:
 >
 > 1. **You use the latest DEN version**: download `DEN.apk` from the [Releases](../../releases) tab. Older APKs do not have the browser sign-in and cannot play online.
 > 2. **You are signed in INSIDE DEN**: Nextendo menu → "Sign in to Nextendo". Your username must show in that menu. Being signed in on the website is not enough.
 > 3. **Only one open session**: close the game **and** DEN on all your other devices (another phone, console, PC, another emulator). An account can only be online in one place.
 > 4. **E-mail confirmed**: your account must be activated on [nextendo.network](https://nextendo.network).
 > 5. **After a crash**: fully close DEN, wait 2 to 3 minutes, then relaunch.
+> 6. **Check that your console shows up on Nextendo**: on [nextendo.network](https://nextendo.network), click your profile picture, then **Security → "My sessions"**.
+>    While you are online in a game, an **"(emulator) · in game"** entry must appear next to your browser (the name shown may be "Ryujinx (emulator)", that is normal).
+>    If it **never** appears, even with another emulator, the problem comes from your **account**, not from DEN: contact the Nextendo team on their [Discord](https://discord.gg/nextendonetwork) and give them your username.
+>
+> <img src="docs/screenshots/nextendo-security.png" alt="Nextendo: profile picture, then Security, My sessions button" width="420">
+>
+> <img src="docs/screenshots/nextendo-sessions.png" alt="Active sessions: the browser and the emulator in game" width="480">
 >
 > Still stuck? Send your logs: close DEN, reopen it, then **Settings → "Share debug logs"** (this is the `eden_log.txt.old` file).
 
@@ -161,3 +175,5 @@ Run the **Build Android** GitHub Actions workflow (*Actions* tab). The APK comes
 Licensed under **GPL-3.0 or later** (see [LICENSE.txt](./LICENSE.txt)). Original copyright notices are preserved.
 <!-- DEN_README_V2 -->
 <!-- DEN_README_ERRBOX -->
+
+<!-- DEN_README_SESSIONS -->
