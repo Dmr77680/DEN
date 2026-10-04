@@ -215,11 +215,15 @@ FriendImpl MakeFriend(const Common::NextendoFriends::Entry& entry) {
     std::memcpy(out.nickname.data(), entry.name.data(), length);
 
     out.presence.user_id = out.user_id;
-    out.presence.status = static_cast<u32>(entry.status);
+    // DEN_FRIEND_FLAG : comme Ryujinx-Nextendo, tout ami en ligne est presente au jeu comme
+    // OnlinePlay (2) et "dans cette application"; un ami hors ligne reste Offline (0). Avec le
+    // statut brut "Online" (1), Mario Kart 8 Deluxe affiche l'ami sans le drapeau Rejoindre.
+    const bool friend_online = entry.status > 0;
+    out.presence.status = friend_online ? 2U : 0U;
     out.presence.last_time_online_timestamp = 0x7FFFFFFFFFFFFFFFLL;
     // Marks the friend as being in THIS application, without which the game asks for zero friend
     // PIDs and never queries their session.
-    out.presence.same_presence_group_application = 1;
+    out.presence.same_presence_group_application = friend_online ? 1 : 0;
 
     const auto blob = std::min(entry.app_field.size(), out.presence.app_key_value.size());
     std::memcpy(out.presence.app_key_value.data(), entry.app_field.data(), blob);
