@@ -80,8 +80,10 @@ jobs:
             -Dvulkan-beta=true -Degl=disabled -Dgles1=disabled -Dgles2=disabled -Dopengl=false \
             -Dllvm=disabled -Dglx=disabled -Dgbm=disabled -Dvalgrind=disabled -Dbuild-tests=false \
             -Dzstd=disabled -Dxmlconfig=disabled -Dlibunwind=disabled -Dlmsensors=disabled \
-            -Dstrip=true -Dwrap_mode=default # DEN_TURNIP_ZSTD
-          ninja -C build src/freedreno/vulkan/libvulkan_freedreno.so
+            -Dc_args=-w -Dcpp_args=-w -Dstrip=true -Dwrap_mode=default # DEN_TURNIP_ZSTD DEN_TURNIP_QUIET
+          set -o pipefail
+          ninja -C build src/freedreno/vulkan/libvulkan_freedreno.so 2>&1 | tee ninja.log || {
+            echo '=== ERREURS ==='; grep -n -B2 -A6 -E 'error:|FAILED:' ninja.log | head -120; exit 1; }
 
       - name: Paquet pour le gestionnaire de pilotes
         run: |
