@@ -77,7 +77,8 @@ jobs:
             -Dgallium-drivers= -Dvulkan-drivers=freedreno -Dfreedreno-kmds=kgsl \
             -Dvulkan-beta=true -Degl=disabled -Dgles1=disabled -Dgles2=disabled -Dopengl=false \
             -Dllvm=disabled -Dglx=disabled -Dgbm=disabled -Dvalgrind=disabled -Dbuild-tests=false \
-            -Dstrip=true -Dwrap_mode=default
+            -Dzstd=disabled -Dxmlconfig=disabled -Dlibunwind=disabled -Dlmsensors=disabled \
+            -Dstrip=true -Dwrap_mode=default # DEN_TURNIP_ZSTD
           ninja -C build src/freedreno/vulkan/libvulkan_freedreno.so
 
       - name: Paquet pour le gestionnaire de pilotes
