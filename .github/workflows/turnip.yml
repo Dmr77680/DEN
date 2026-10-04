@@ -1,0 +1,105 @@
+name: Build Turnip (test)
+# DEN_TURNIP
+# Compile le pilote Turnip de Mesa pour Adreno (Android) et produit un ZIP installable dans le
+# gestionnaire de pilotes. On choisit la version de Mesa par DATE (dernier commit avant ce jour)
+# ou par COMMIT exact, ce qui permet de retrouver quelle modification change le comportement.
+on:
+  workflow_dispatch:
+    inputs:
+      date:
+        description: 'Date AAAA-MM-JJ (dernier commit de Mesa avant la fin de ce jour)'
+        required: false
+        default: '2025-10-11'
+      commit:
+        description: 'Commit Mesa exact (prioritaire sur la date, laisser vide sinon)'
+        required: false
+        default: ''
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - name: Dependances
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y meson ninja-build glslang-tools python3-mako python3-yaml python3-ply \
+            pkg-config flex bison zip patchelf ccache cmake
+          pip3 install --user --break-system-packages packaging || pip3 install --user packaging || true
+
+      - name: Recuperer Mesa
+        run: |
+          git clone --filter=blob:none --no-checkout https://gitlab.freedesktop.org/mesa/mesa.git mesa
+          cd mesa
+          if [ -n "${{ inputs.commit }}" ]; then
+            REF="${{ inputs.commit }}"
+          else
+            REF=$(git rev-list -1 --before="${{ inputs.date }} 23:59:59" origin/HEAD)
+          fi
+          git checkout -q "$REF"
+          echo "MESA_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+          echo "MESA_DATE=$(git log -1 --format=%cs)" >> "$GITHUB_ENV"
+          echo "MESA_VER=$(cat VERSION)" >> "$GITHUB_ENV"
+          git log -1 --format='Mesa %H %cI %s'
+
+      - name: Fichier de compilation Android
+        run: |
+          NDK="${ANDROID_NDK_LATEST_HOME:-$ANDROID_NDK_HOME}"
+          BIN="$NDK/toolchains/llvm/prebuilt/linux-x86_64/bin"
+          SDK=31
+          echo "NDK=$NDK" >> "$GITHUB_ENV"
+          cat > mesa/android-aarch64.txt <<EOF
+          [binaries]
+          ar = '$BIN/llvm-ar'
+          c = ['$BIN/aarch64-linux-android$SDK-clang']
+          cpp = ['$BIN/aarch64-linux-android$SDK-clang++', '-fno-exceptions', '-fno-unwind-tables', '-fno-asynchronous-unwind-tables', '-static-libstdc++']
+          c_ld = 'lld'
+          cpp_ld = 'lld'
+          strip = '$BIN/llvm-strip'
+          pkg-config = ['/usr/bin/pkg-config']
+          [host_machine]
+          system = 'android'
+          cpu_family = 'aarch64'
+          cpu = 'armv8'
+          endian = 'little'
+          EOF
+          sed -i 's/^          //' mesa/android-aarch64.txt
+
+      - name: Compiler
+        run: |
+          cd mesa
+          meson setup build --cross-file android-aarch64.txt \
+            -Dbuildtype=release -Dplatforms=android -Dplatform-sdk-version=31 \
+            -Dandroid-stub=true -Dandroid-libbacktrace=disabled \
+            -Dgallium-drivers= -Dvulkan-drivers=freedreno -Dfreedreno-kmds=kgsl \
+            -Dvulkan-beta=true -Degl=disabled -Dgles1=disabled -Dgles2=disabled -Dopengl=false \
+            -Dllvm=disabled -Dglx=disabled -Dgbm=disabled -Dvalgrind=disabled -Dbuild-tests=false \
+            -Dstrip=true -Dwrap_mode=default
+          ninja -C build src/freedreno/vulkan/libvulkan_freedreno.so
+
+      - name: Paquet pour le gestionnaire de pilotes
+        run: |
+          mkdir pkg && cd pkg
+          cp ../mesa/build/src/freedreno/vulkan/libvulkan_freedreno.so vulkan.ad07XX.so
+          patchelf --set-soname vulkan.ad07XX.so vulkan.ad07XX.so
+          cat > meta.json <<EOF
+          {
+            "schemaVersion": 1,
+            "name": "DEN Turnip ${MESA_DATE}",
+            "description": "Mesa ${MESA_VER} commit ${MESA_SHA:0:10} (${MESA_DATE})",
+            "author": "mesa",
+            "packageVersion": "1",
+            "vendor": "Mesa",
+            "driverVersion": "${MESA_VER} ${MESA_SHA:0:10}",
+            "minApi": 28,
+            "libraryName": "vulkan.ad07XX.so"
+          }
+          EOF
+          sed -i 's/^          //' meta.json
+          zip -9 "../turnip-${MESA_DATE}-${MESA_SHA:0:10}.zip" meta.json vulkan.ad07XX.so
+          echo "Paquet: turnip-${MESA_DATE}-${MESA_SHA:0:10}.zip"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: turnip-${{ env.MESA_DATE }}-${{ env.MESA_SHA }}
+          path: turnip-*.zip
+          if-no-files-found: error
