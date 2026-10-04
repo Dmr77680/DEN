@@ -70,6 +70,10 @@ static_assert(offsetof(FriendImpl, is_valid) == 0x128);
 
 // [Nextendo] InGame never leaves "0" for a hosted private battle even once NAT resolution is
 // confirmed (nextendo_nat_rewrite.h fixes the station data itself). Same-length in-place fix.
+// DEN_FRIEND_JOIN: true between DeclareOpenOnlinePlaySession and DeclareCloseOnlinePlaySession.
+// On a real console the friend list only offers "join" for friends whose presence is OnlinePlay.
+std::atomic<bool> g_online_play_open{false};
+
 bool FixupInGameFlag(std::string& app_field) {
     if (!Common::NextendoNat::GetObservedExternalIp()) {
         return false;
@@ -971,7 +975,10 @@ void IFriendService::CheckBlockedUserListAvailability(HLERequestContext& ctx) {
 }
 
 void IFriendService::DeclareCloseOnlinePlaySession(HLERequestContext& ctx) {
-    LOG_WARNING(Service_Friend, "(STUBBED) DeclareCloseOnlinePlaySession called");
+    // DEN_FRIEND_JOIN
+    g_online_play_open = false;
+    Common::NextendoFriends::SetLocalStatus(Common::NextendoFriends::PresenceOnline);
+    LOG_INFO(Service_Friend, "[Nextendo] DeclareCloseOnlinePlaySession -> presence Online");
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(ResultSuccess);
 }
@@ -999,6 +1006,10 @@ void IFriendService::UpdateUserPresence(HLERequestContext& ctx) {
             LOG_INFO(Service_Friend,
                      "[Nextendo] ARMS JoinMode indicates an active session; bumping status to "
                      "OnlinePlay (raw status floors at Online otherwise)");
+        }
+        // DEN_FRIEND_JOIN: keep the "joinable" status while an online play session is open
+        if (g_online_play_open.load()) {
+            status = std::max<s32>(status, Common::NextendoFriends::PresenceOnlinePlay);
         }
         Common::NextendoFriends::SetLocalPresence(status, app_field);
         LOG_INFO(Service_Friend, "[Nextendo] UpdateUserPresence status={} -> {} app_field={}",
@@ -1245,7 +1256,10 @@ void IFriendService::GetProfileListV2(HLERequestContext& ctx) {
 }
 
 void IFriendService::DeclareOpenOnlinePlaySession(HLERequestContext& ctx) {
-    LOG_WARNING(Service_Friend, "(STUBBED) DeclareOpenOnlinePlaySession called");
+    // DEN_FRIEND_JOIN
+    g_online_play_open = true;
+    Common::NextendoFriends::SetLocalStatus(Common::NextendoFriends::PresenceOnlinePlay);
+    LOG_INFO(Service_Friend, "[Nextendo] DeclareOpenOnlinePlaySession -> presence OnlinePlay");
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(ResultSuccess);
 }
