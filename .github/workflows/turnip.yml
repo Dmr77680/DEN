@@ -22,9 +22,13 @@ jobs:
       - name: Dependances
         run: |
           sudo apt-get update
-          sudo apt-get install -y meson ninja-build glslang-tools python3-mako python3-yaml python3-ply \
+          sudo apt-get install -y ninja-build glslang-tools python3-mako python3-yaml python3-ply \
             pkg-config flex bison zip patchelf ccache cmake
-          pip3 install --user --break-system-packages packaging || pip3 install --user packaging || true
+          # DEN_TURNIP_MESON
+          pip3 install --user --break-system-packages --upgrade 'meson>=1.5' packaging mako pyyaml ply
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          export PATH="$HOME/.local/bin:$PATH"
+          meson --version
 
       - name: Recuperer Mesa
         run: |
