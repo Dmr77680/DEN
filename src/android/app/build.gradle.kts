@@ -161,7 +161,8 @@ android {
                 "proguard-rules.pro"
             )
 
-            manifestPlaceholders += mapOf("appNameSuffix" to " Debug Release")
+            // DEN_APPNAME: nom affiche "DEN" (le suffixe du paquet reste, pour garder les donnees)
+            manifestPlaceholders += mapOf("appNameSuffix" to "")
 
             versionNameSuffix = "-relWithDebInfo"
             applicationIdSuffix = ".relWithDebInfo"
