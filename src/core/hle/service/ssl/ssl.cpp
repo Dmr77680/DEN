@@ -325,7 +325,8 @@ private:
             if (++den_rd_count <= 800) {
                 static constexpr char kHex[] = "0123456789abcdef";
                 std::string head;
-                for (size_t i = 0; i < (std::min)<size_t>(tmp, 16); ++i) {
+                const size_t den_head_len = tmp < 16 ? tmp : 16; // DEN_SSLLOG_FIX
+                for (size_t i = 0; i < den_head_len; ++i) {
                     head += kHex[data.data()[i] >> 4];
                     head += kHex[data.data()[i] & 0xF];
                 }
