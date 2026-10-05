@@ -4,6 +4,7 @@
 // SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
+#include <atomic>
 #include "common/string_util.h"
 
 #include "core/core.h"
@@ -318,8 +319,20 @@ private:
         size_t tmp{};
         auto const res = backend->Read(&tmp, data);
         *out_size = u32(tmp);
-        LOG_DEBUG(Service_SSL, "[Nextendo] Read: buffer={} got={} result={}:{}", data.size(), tmp,
-                 static_cast<u32>(res.GetModule()), res.GetDescription());
+        // DEN_SSLLOG
+        if (tmp > 0 || res.IsFailure()) {
+            static std::atomic<u32> den_rd_count{0};
+            if (++den_rd_count <= 800) {
+                static constexpr char kHex[] = "0123456789abcdef";
+                std::string head;
+                for (size_t i = 0; i < (std::min)<size_t>(tmp, 16); ++i) {
+                    head += kHex[data.data()[i] >> 4];
+                    head += kHex[data.data()[i] & 0xF];
+                }
+                LOG_INFO(Service_SSL, "[Nextendo] Read: got={} result={}:{} head={}", tmp,
+                         static_cast<u32>(res.GetModule()), res.GetDescription(), head);
+            }
+        }
         return res;
     }
 
@@ -332,9 +345,15 @@ private:
         const bool did_rewrite = TryFixupStationAddress(in_data, rewritten);
         const std::span<const u8> send_data = did_rewrite ? std::span<const u8>(rewritten) : in_data;
         auto const res = backend->Write(&tmp, send_data);
-        LOG_DEBUG(Service_SSL, "[Nextendo] Write: size={} wrote={} rewrite={} result={}:{}",
-                 in_data.size(), tmp, did_rewrite, static_cast<u32>(res.GetModule()),
-                 res.GetDescription());
+        // DEN_SSLLOG
+        {
+            static std::atomic<u32> den_wr_count{0};
+            if (++den_wr_count <= 800) {
+                LOG_INFO(Service_SSL, "[Nextendo] Write: size={} wrote={} rewrite={} result={}:{}",
+                         in_data.size(), tmp, did_rewrite, static_cast<u32>(res.GetModule()),
+                         res.GetDescription());
+            }
+        }
         *out_size = (did_rewrite && res.IsSuccess()) ? u32(in_data.size()) : u32(tmp);
         return res;
     }
