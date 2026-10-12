@@ -156,6 +156,8 @@ private:
     void RecvFrom(HLERequestContext& ctx);
     void Send(HLERequestContext& ctx);
     void SendTo(HLERequestContext& ctx);
+    void RecvMMsg(HLERequestContext& ctx);
+    void SendMMsg(HLERequestContext& ctx);
     void Write(HLERequestContext& ctx);
     void Read(HLERequestContext& ctx);
     void Close(HLERequestContext& ctx);

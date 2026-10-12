@@ -557,6 +557,294 @@ void BSD_USA::Close(HLERequestContext& ctx) {
 }
 
 /// @brief Only bsd:s is able to dup()
+namespace {
+// [Nextendo] Wire format for a single nn::socket msghdr inside a SendMMsg/RecvMMsg buffer.
+// Mirrors Ryujinx-Nextendo's BsdMsgHdr::Deserialize/Serialize byte-for-byte (itself matching
+// the real NX ABI): msg_namelen, [name], iov_count, iov_count * (u64 len, [data]),
+// control_len, [control], flags, then a trailing "length" field the real syscall uses to
+// report bytes transferred for that specific message.
+struct MMsgEntry {
+    std::vector<u8> name;
+    std::vector<std::vector<u8>> iov;
+    std::vector<u8> control;
+    u32 flags = 0;
+    u32 length = 0;
+};
+
+bool MMsgReadU32(std::span<const u8>& data, u32& out) {
+    if (data.size() < sizeof(u32)) {
+        return false;
+    }
+    std::memcpy(&out, data.data(), sizeof(u32));
+    data = data.subspan(sizeof(u32));
+    return true;
+}
+
+bool MMsgReadU64(std::span<const u8>& data, u64& out) {
+    if (data.size() < sizeof(u64)) {
+        return false;
+    }
+    std::memcpy(&out, data.data(), sizeof(u64));
+    data = data.subspan(sizeof(u64));
+    return true;
+}
+
+bool MMsgReadBytes(std::span<const u8>& data, size_t count, std::vector<u8>& out) {
+    if (data.size() < count) {
+        return false;
+    }
+    out.assign(data.begin(), data.begin() + count);
+    data = data.subspan(count);
+    return true;
+}
+
+// Mirrors BsdMMsgHdr::Deserialize -- false on a malformed/short buffer (EFAULT in the
+// reference implementation).
+bool MMsgDeserialize(std::span<const u8> data, s32 vlen, std::vector<MMsgEntry>& out) {
+    if (data.empty() || vlen < 0) {
+        return false;
+    }
+    data = data.subspan(1); // leading header byte -- ignored (real hardware ignores it too)
+
+    out.resize(static_cast<size_t>(vlen));
+    for (auto& msg : out) {
+        u32 name_len;
+        if (!MMsgReadU32(data, name_len)) {
+            return false;
+        }
+        if (name_len > 0 && !MMsgReadBytes(data, name_len, msg.name)) {
+            return false;
+        }
+
+        u32 iov_count;
+        if (!MMsgReadU32(data, iov_count)) {
+            return false;
+        }
+        msg.iov.resize(iov_count);
+        for (auto& segment : msg.iov) {
+            u64 iov_len;
+            if (!MMsgReadU64(data, iov_len)) {
+                return false;
+            }
+            if (iov_len > 0 && !MMsgReadBytes(data, static_cast<size_t>(iov_len), segment)) {
+                return false;
+            }
+        }
+
+        u32 control_len;
+        if (!MMsgReadU32(data, control_len)) {
+            return false;
+        }
+        if (control_len > 0 && !MMsgReadBytes(data, control_len, msg.control)) {
+            return false;
+        }
+
+        if (!MMsgReadU32(data, msg.flags)) {
+            return false;
+        }
+        u32 unused_input_length;
+        if (!MMsgReadU32(data, unused_input_length)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+// Mirrors BsdMMsgHdr::Serialize -- writes the same shape back with each entry's (now updated)
+// length field, so the guest can see how many bytes actually went out per message.
+void MMsgSerialize(std::vector<u8>& out, const std::vector<MMsgEntry>& messages) {
+    out.push_back(0x8);
+    for (const auto& msg : messages) {
+        const auto append_u32 = [&](u32 value) {
+            const auto* bytes = reinterpret_cast<const u8*>(&value);
+            out.insert(out.end(), bytes, bytes + sizeof(value));
+        };
+        const auto append_u64 = [&](u64 value) {
+            const auto* bytes = reinterpret_cast<const u8*>(&value);
+            out.insert(out.end(), bytes, bytes + sizeof(value));
+        };
+
+        append_u32(static_cast<u32>(msg.name.size()));
+        out.insert(out.end(), msg.name.begin(), msg.name.end());
+
+        append_u32(static_cast<u32>(msg.iov.size()));
+        for (const auto& segment : msg.iov) {
+            append_u64(segment.size());
+            out.insert(out.end(), segment.begin(), segment.end());
+        }
+
+        append_u32(static_cast<u32>(msg.control.size()));
+        out.insert(out.end(), msg.control.begin(), msg.control.end());
+
+        append_u32(msg.flags);
+        append_u32(msg.length);
+    }
+}
+
+// [Nextendo] SendMMsg/RecvMMsg's message buffer is a "receive" (B) descriptor: the game
+// pre-populates it and expects the service to both read that AND write the per-message length
+// fields back into the SAME buffer afterward (a real in-out MapAlias, not the usual one-way
+// A-in/B-out split). ctx.ReadBuffer() only ever looks at A/X descriptors and silently returned
+// empty for this call; read B's raw guest memory directly instead.
+std::vector<u8> ReadMMsgBuffer(HLERequestContext& ctx) {
+    std::vector<u8> raw_buffer;
+    if (!ctx.BufferDescriptorB().empty() && ctx.BufferDescriptorB()[0].Size() > 0) {
+        raw_buffer.resize(ctx.BufferDescriptorB()[0].Size());
+        ctx.GetMemory().ReadBlock(ctx.BufferDescriptorB()[0].Address(), raw_buffer.data(),
+                                  raw_buffer.size());
+    } else {
+        auto fallback = ctx.ReadBuffer(0);
+        raw_buffer.assign(fallback.begin(), fallback.end());
+    }
+    return raw_buffer;
+}
+} // Anonymous namespace
+
+void BSD_USA::SendMMsg(HLERequestContext& ctx) {
+    IPC::RequestParser rp{ctx};
+    const s32 fd = rp.Pop<s32>();
+    const s32 vlen = rp.Pop<s32>();
+    const u32 flags = rp.Pop<u32>();
+
+    LOG_DEBUG(Service, "called. fd={} vlen={} flags={:#x}", fd, vlen, flags);
+
+    // [Nextendo] Sends each message individually via the same SendImpl every other BSD send
+    // call uses (including its TLS SNI injection for a ClientHello) rather than a single
+    // batched scatter-gather send -- functionally equivalent for both a stream socket (message
+    // boundaries don't matter) and a datagram one (each message is its own datagram).
+    if (!IsFileDescriptorValid(fd)) {
+        IPC::ResponseBuilder rb{ctx, 4};
+        rb.Push(ResultSuccess);
+        rb.Push<s32>(-1);
+        rb.PushEnum(Errno::BADF);
+        return;
+    }
+
+    std::vector<u8> raw_buffer = ReadMMsgBuffer(ctx);
+
+    std::vector<MMsgEntry> messages;
+    if (!MMsgDeserialize(raw_buffer, vlen, messages)) {
+        LOG_ERROR(Service, "SendMMsg fd={} vlen={}: malformed message buffer", fd, vlen);
+        IPC::ResponseBuilder rb{ctx, 4};
+        rb.Push(ResultSuccess);
+        rb.Push<s32>(-1);
+        rb.PushEnum(Errno::INVAL);
+        return;
+    }
+
+    s32 processed = 0;
+    Errno last_errno = Errno::SUCCESS;
+    for (auto& msg : messages) {
+        std::vector<u8> concatenated;
+        for (const auto& segment : msg.iov) {
+            concatenated.insert(concatenated.end(), segment.begin(), segment.end());
+        }
+        auto [sent, send_errno] = SendImpl(fd, flags | msg.flags, concatenated);
+        if (send_errno != Errno::SUCCESS) {
+            last_errno = send_errno;
+            // A message already sent stays sent -- only stop processing further ones, same
+            // as the real syscall returning a short count on a mid-batch failure.
+            break;
+        }
+        msg.length = sent < 0 ? 0 : static_cast<u32>(sent);
+        ++processed;
+    }
+
+    std::vector<u8> write_buffer;
+    MMsgSerialize(write_buffer, messages);
+    ctx.WriteBuffer(write_buffer);
+
+    IPC::ResponseBuilder rb{ctx, 4};
+    rb.Push(ResultSuccess);
+    // [Nextendo] On error, return -1 rather than the processed-message count -- grpc-core
+    // treats a zero-length read/write as end of stream and tears the connection down, which
+    // broke every NPLN title with error 2321-4992.
+    rb.Push<s32>(last_errno == Errno::SUCCESS ? processed : -1);
+    rb.PushEnum(last_errno);
+}
+
+void BSD_USA::RecvMMsg(HLERequestContext& ctx) {
+    IPC::RequestParser rp{ctx};
+    const s32 fd = rp.Pop<s32>();
+    const s32 vlen = rp.Pop<s32>();
+    const u32 flags = rp.Pop<u32>();
+    rp.Pop<u32>(); // reserved, unused -- matches Ryujinx-Nextendo's own RecvMMsg signature
+    struct TimeVal {
+        u64 tv_sec;
+        u64 tv_usec;
+    };
+    static_assert(sizeof(TimeVal) == 16);
+    [[maybe_unused]] const auto timeout = rp.PopRaw<TimeVal>();
+
+    LOG_DEBUG(Service, "called. fd={} vlen={} flags={:#x}", fd, vlen, flags);
+
+    // [Nextendo] A title that batches its sends via sendmmsg() needs the matching recvmmsg() to
+    // read the response, or the handshake goes out fine and the reply can never come back.
+    // `timeout` is deliberately unused, matching Ryujinx-Nextendo's own reference implementation
+    // -- non-blocking behavior still comes the normal way, through FLAG_MSG_DONTWAIT/O_NONBLOCK.
+    if (!IsFileDescriptorValid(fd)) {
+        IPC::ResponseBuilder rb{ctx, 4};
+        rb.Push(ResultSuccess);
+        rb.Push<s32>(-1);
+        rb.PushEnum(Errno::BADF);
+        return;
+    }
+
+    std::vector<u8> raw_buffer = ReadMMsgBuffer(ctx);
+
+    std::vector<MMsgEntry> messages;
+    if (!MMsgDeserialize(raw_buffer, vlen, messages)) {
+        LOG_ERROR(Service, "RecvMMsg fd={} vlen={}: malformed message buffer", fd, vlen);
+        IPC::ResponseBuilder rb{ctx, 4};
+        rb.Push(ResultSuccess);
+        rb.Push<s32>(-1);
+        rb.PushEnum(Errno::INVAL);
+        return;
+    }
+
+    s32 processed = 0;
+    Errno last_errno = Errno::SUCCESS;
+    for (auto& msg : messages) {
+        size_t capacity = 0;
+        for (const auto& segment : msg.iov) {
+            capacity += segment.size();
+        }
+
+        std::vector<u8> received(capacity);
+        auto [ret, recv_errno] = RecvImpl(fd, flags | msg.flags, received);
+        if (recv_errno != Errno::SUCCESS) {
+            LOG_INFO(Service, "RecvMMsg fd={} capacity={}: recv_errno={}", fd, capacity,
+                     static_cast<int>(recv_errno));
+            last_errno = recv_errno;
+            break;
+        }
+
+        const size_t actual = ret < 0 ? 0 : static_cast<size_t>(ret);
+        // Distribute the received bytes back across this message's iovs in the same order
+        // they were laid out on the way in.
+        size_t offset = 0;
+        for (auto& segment : msg.iov) {
+            if (offset < actual) {
+                const size_t take = std::min(segment.size(), actual - offset);
+                std::copy(received.begin() + offset, received.begin() + offset + take,
+                          segment.begin());
+            }
+            offset += segment.size();
+        }
+        msg.length = static_cast<u32>(actual);
+        ++processed;
+    }
+
+    std::vector<u8> write_buffer;
+    MMsgSerialize(write_buffer, messages);
+    ctx.WriteBuffer(write_buffer);
+
+    IPC::ResponseBuilder rb{ctx, 4};
+    rb.Push(ResultSuccess);
+    rb.Push<s32>(last_errno == Errno::SUCCESS ? processed : -1);
+    rb.PushEnum(last_errno);
+}
+
 void BSD_USA::DuplicateSocket(HLERequestContext& ctx) {
     struct InputParameters {
         s32 fd;
@@ -1451,8 +1739,8 @@ BSD_USA::BSD_USA(Core::System& system_, const char* name, bool is_user_)
         {26, &BSD_USA::Close, "Close"},
         {27, &BSD_USA::DuplicateSocket, "DuplicateSocket"},
         {28, nullptr, "GetResourceStatistics"},
-        {29, nullptr, "RecvMMsg"}, //3.0.0+
-        {30, nullptr, "SendMMsg"}, //3.0.0+
+        {29, &BSD_USA::RecvMMsg, "RecvMMsg"}, //3.0.0+
+        {30, &BSD_USA::SendMMsg, "SendMMsg"}, //3.0.0+
         {31, &BSD_USA::EventFd, "EventFd"}, //7.0.0+
         {32, nullptr, "RegisterResourceStatisticsName"}, //7.0.0+
         {33, nullptr, "RegisterClientShared"}, //10.0.0+
