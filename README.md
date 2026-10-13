@@ -30,6 +30,12 @@ DEN est un fork de l'émulateur Switch **[Eden](https://git.eden-emu.dev/eden-em
 <tr><td align="center" width="50%"><img src="docs/screenshots/mii.jpg" alt="Mii importé dans le jeu" width="100%"><br><sub>Mii importé dans le jeu</sub></td><td align="center" width="50%"><img src="docs/screenshots/race.jpg" alt="Course en ligne à 60 FPS" width="100%"><br><sub>Course en ligne à 60 FPS</sub></td></tr>
 </table>
 
+## 💬 Communauté
+
+Pour partager, poser tes questions, signaler un bug ou suivre les nouvelles versions de DEN, rejoins le **[Discord de DEN](https://discord.gg/YjdS6wrbUj)**. C'est là que je réponds, plutôt qu'en messages privés.
+
+> Ce serveur est celui de **DEN**. Pour le compte et la liaison Discord de **Nextendo**, c'est toujours le [serveur Nextendo](https://discord.gg/nextendonetwork) qu'il faut rejoindre.
+
 ## 🔑 Prérequis : un compte Nextendo
 
 Pour jouer en ligne avec DEN, il te faut un **compte Nextendo gratuit**, à créer sur **[nextendo.network](https://nextendo.network)**. Sans compte, DEN fonctionne comme un émulateur Switch classique, mais ni le jeu en ligne ni la liste d'amis ne sont disponibles.
@@ -118,6 +124,12 @@ DEN is a fork of the **[Eden](https://git.eden-emu.dev/eden-emu/eden)** Switch e
 <tr><td align="center" width="50%"><img src="docs/screenshots/online.jpg" alt="Mario Kart 8 Deluxe: online mode" width="100%"><br><sub>Mario Kart 8 Deluxe: online mode</sub></td><td align="center" width="50%"><img src="docs/screenshots/lobby.jpg" alt="Online lobby with other players" width="100%"><br><sub>Online lobby with other players</sub></td></tr>
 <tr><td align="center" width="50%"><img src="docs/screenshots/mii.jpg" alt="Imported Mii in game" width="100%"><br><sub>Imported Mii in game</sub></td><td align="center" width="50%"><img src="docs/screenshots/race.jpg" alt="Online race at 60 FPS" width="100%"><br><sub>Online race at 60 FPS</sub></td></tr>
 </table>
+
+## 💬 Community
+
+To share, ask questions, report a bug or follow new DEN versions, join the **[DEN Discord](https://discord.gg/YjdS6wrbUj)**. That is where I answer, rather than in private messages.
+
+> This server is for **DEN**. For your **Nextendo** account and Discord link, you still need to join the [Nextendo server](https://discord.gg/nextendonetwork).
 
 ## 🔑 Requirement: a Nextendo account
 
