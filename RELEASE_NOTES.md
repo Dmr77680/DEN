@@ -6,6 +6,7 @@
 - **Crash Team Racing Nitro-Fueled en ligne** (jeu en version 1.0.15) : les serveurs Demonware sont redirigés vers Nextendo et les correctifs nécessaires sont intégrés.
 - **Super Mario Party Jamboree en ligne** (jeu en version 2.3.0) : ajout des appels réseau `SendMMsg` / `RecvMMsg` et du correctif de certificat intégré.
 - **Connexion plus stable** : DEN garde le port UDP 5 secondes quand un jeu le ferme puis le rouvre, pour que l'adresse vue par le serveur ne change pas.
+- **Fichier de compte** : DEN ne génère plus `nextendo_account.txt` via Citron ; il se récupère avec l'app **Orange**, sur le Discord de DEN.
 - **README** : section communauté (Discord) et consignes de liaison du compte Discord Nextendo.
 
 ### ✅ Ce qui marche (depuis les versions précédentes)
@@ -29,7 +30,7 @@
 1. Android 13+ et arm64 requis.
 2. Télécharge `DEN.apk` ci-dessous et installe-le.
 3. Ajoute tes propres clés, firmware et jeux (dumps de ta console).
-4. Connecte-toi à ton compte Nextendo depuis DEN (liaison Discord sur https://discord.gg/nextendonetwork).
+4. Récupère ton fichier `nextendo_account.txt` avec l'app **Orange** (sur le Discord de DEN : https://discord.gg/YjdS6wrbUj) et copie-le dans `files/config/` de DEN. La liaison Discord de ton compte se fait sur https://discord.gg/nextendonetwork.
 5. Les jeux doivent être dans la version exigée par Nextendo (Jamboree 2.3.0, Crash Team Racing 1.0.15, Mario Kart 8 Deluxe 4.0.0).
 
 ⚠️ Ne partage jamais ton `nextendo_account.txt`.
@@ -42,6 +43,7 @@
 - **Crash Team Racing Nitro-Fueled online** (game version 1.0.15): Demonware servers are redirected to Nextendo and the required patches are built in.
 - **Super Mario Party Jamboree online** (game version 2.3.0): added the `SendMMsg` / `RecvMMsg` network calls and the built-in certificate patch.
 - **More stable connection**: DEN keeps the UDP port for 5 seconds when a game closes and reopens it, so the address seen by the server doesn't change.
+- **Account file**: DEN no longer generates `nextendo_account.txt` through Citron; get it with the **Orange** app on the DEN Discord.
 - **README**: community (Discord) section and Nextendo Discord linking instructions.
 
 ### ✅ What works (from earlier versions)
@@ -65,7 +67,7 @@
 1. Android 13+ and arm64 required.
 2. Download `DEN.apk` below and install it.
 3. Add your own keys, firmware and games (dumps from your own console).
-4. Sign in to your Nextendo account from DEN (Discord linking at https://discord.gg/nextendonetwork).
+4. Get your `nextendo_account.txt` file with the **Orange** app (on the DEN Discord: https://discord.gg/YjdS6wrbUj) and copy it into DEN's `files/config/` folder. Your account's Discord linking is done at https://discord.gg/nextendonetwork.
 5. Games must be the version Nextendo requires (Jamboree 2.3.0, Crash Team Racing 1.0.15, Mario Kart 8 Deluxe 4.0.0).
 
 ⚠️ Never share your `nextendo_account.txt`.
