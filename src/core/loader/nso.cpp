@@ -183,13 +183,14 @@ std::optional<VAddr> AppLoader_NSO::LoadModule(Kernel::KProcess& process, Core::
     // mod patches exist, and must never go through the mod-patch path at all, since Splatoon 3
     // refuses to boot with any mod enabled (see main.cpp) and these patches need to survive that
     // ban rather than be blocked by it.
-    constexpr std::array<u64, 6> kNplnPatchableTitles{{
+    constexpr std::array<u64, 7> kNplnPatchableTitles{{
         0x0100F9F00C696000ULL, // DEN_CTR_TITLE Crash Team Racing Nitro-Fueled
         0x0100C2500FC20000ULL, // Splatoon 3
         0x010015100B514000ULL, // Super Mario Bros. Wonder
         0x0100C9A00ECE6000ULL, // Nintendo 64 - Nintendo Classics
         0x0100C6F01C4F8000ULL, // METAL GEAR SOLID: Peace Walker - Master Collection Version
         0x0100965017338000ULL, // Super Mario Party Jamboree
+        0x0100F43008C44000ULL, // Pokémon Legends: Z-A
     }};
     if (pm && std::find(kNplnPatchableTitles.begin(), kNplnPatchableTitles.end(),
                         pm->GetTitleID()) != kNplnPatchableTitles.end()) {
