@@ -5,6 +5,8 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <atomic>
+#include <cctype>
+#include <string>
 #include "common/string_util.h"
 
 #include "core/core.h"
@@ -23,6 +25,59 @@
 #include "core/internal_network/sockets.h"
 
 namespace Service::SSL {
+
+// DEN_SSLDUMP: readable one-line view of an HTTP message for the log. Headers are cut short and
+// credentials (Authorization, Cookie, anything with "token") are hidden; only the start of the
+// body is shown.
+static std::string DenHttpDump(const u8* p, size_t n, size_t body_max) {
+    std::string raw;
+    raw.reserve(n);
+    for (size_t i = 0; i < n; ++i) {
+        const char c = static_cast<char>(p[i]);
+        raw += (c == '\r' || c == '\n' || (c >= 32 && c < 127)) ? c : '.';
+    }
+    std::string out;
+    const size_t split = raw.find("\r\n\r\n");
+    const std::string head = split == std::string::npos ? raw : raw.substr(0, split);
+    size_t pos = 0;
+    while (pos <= head.size()) {
+        size_t end = head.find("\r\n", pos);
+        if (end == std::string::npos) {
+            end = head.size();
+        }
+        std::string line = head.substr(pos, end - pos);
+        std::string low = line;
+        for (auto& ch : low) {
+            ch = static_cast<char>(std::tolower(static_cast<unsigned char>(ch)));
+        }
+        const size_t colon = line.find(':');
+        if (colon != std::string::npos &&
+            (low.starts_with("authorization") || low.starts_with("cookie") ||
+             low.find("token") != std::string::npos)) {
+            line = line.substr(0, colon) + ": <hidden>";
+        } else if (line.size() > 90) {
+            line = line.substr(0, 90) + "...";
+        }
+        out += line;
+        out += " | ";
+        pos = end + 2;
+    }
+    if (split != std::string::npos) {
+        std::string body = raw.substr(split + 4);
+        const size_t total = body.size();
+        if (body.size() > body_max) {
+            body.resize(body_max);
+        }
+        for (auto& ch : body) {
+            if (ch == '\r' || ch == '\n') {
+                ch = ' ';
+            }
+        }
+        out += "BODY(" + std::to_string(total) + " bytes): " + body;
+    }
+    return out;
+}
+
 
 // This is nn::ssl::sf::CertificateFormat
 enum class CertificateFormat : u32 {
@@ -332,6 +387,13 @@ private:
                 }
                 LOG_INFO(Service_SSL, "[Nextendo] Read: got={} result={}:{} head={}", tmp,
                          static_cast<u32>(res.GetModule()), res.GetDescription(), head);
+                if (tmp > 0) {
+                    static std::atomic<u32> den_rd_dump{0};
+                    if (++den_rd_dump <= 60) {
+                        LOG_INFO(Service_SSL, "[Nextendo] HTTP response: {}",
+                                 DenHttpDump(data.data(), tmp, 400));
+                    }
+                }
             }
         }
         return res;
@@ -353,6 +415,11 @@ private:
                 LOG_INFO(Service_SSL, "[Nextendo] Write: size={} wrote={} rewrite={} result={}:{}",
                          in_data.size(), tmp, did_rewrite, static_cast<u32>(res.GetModule()),
                          res.GetDescription());
+                static std::atomic<u32> den_wr_dump{0};
+                if (++den_wr_dump <= 60) {
+                    LOG_INFO(Service_SSL, "[Nextendo] HTTP request: {}",
+                             DenHttpDump(in_data.data(), in_data.size(), 120));
+                }
             }
         }
         *out_size = (did_rewrite && res.IsSuccess()) ? u32(in_data.size()) : u32(tmp);
