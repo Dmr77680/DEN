@@ -14,7 +14,7 @@
 - Interface en français et en anglais
 
 ### ⚠️ Ce qui ne marche pas encore
-- **Splatoon 3** : problèmes graphiques et de connexion, en cours de correction
+- **Splatoon 3** : problèmes graphiques (textures), en cours de correction
 - **Pokémon Légendes : Z-A** : rejoindre la room d'un ami peut être long (parfois plusieurs minutes) ou échouer selon le réseau. Un réseau restrictif (Wi-Fi d'entreprise, données mobiles) ou une grande distance compliquent la connexion entre joueurs. Si ça échoue, réessaie en Wi-Fi, en laissant l'hôte sur l'écran de la room.
 - **Pokémon Écarlate / Violet** : pas encore de jeu en ligne.
 - **Mario Kart 8 Deluxe** : la recherche de partie expire parfois
@@ -47,7 +47,7 @@ Viens sur le Discord de DEN : https://discord.gg/YjdS6wrbUj
 - French and English UI
 
 ### ⚠️ What doesn't work yet
-- **Splatoon 3**: graphical and connection issues, being worked on
+- **Splatoon 3**: graphical issues (textures), being worked on
 - **Pokémon Legends: Z-A**: joining a friend's room can take a long time (sometimes several minutes) or fail depending on the network. A restrictive network (company Wi-Fi, mobile data) or a long distance makes the connection between players harder. If it fails, retry on Wi-Fi, keeping the host on the room screen.
 - **Pokémon Scarlet / Violet**: no online play yet.
 - **Mario Kart 8 Deluxe**: finding a match sometimes times out
