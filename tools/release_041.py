@@ -30,6 +30,9 @@ NOTES = r'''# DEN v0.4.1
 
 ⚠️ Ne partage jamais ton `nextendo_account.txt`.
 
+### 💬 Une question ou un bug ?
+Viens sur le Discord de DEN : https://discord.gg/YjdS6wrbUj
+
 ---
 
 ## 🇬🇧 English
@@ -59,6 +62,9 @@ NOTES = r'''# DEN v0.4.1
 5. Games must be on the version Nextendo requires (Pokémon Legends: Z-A 2.0.2, Jamboree 2.3.0, Crash Team Racing 1.0.15, Mario Kart 8 Deluxe 4.0.0).
 
 ⚠️ Never share your `nextendo_account.txt`.
+
+### 💬 Questions or bugs?
+Come to the DEN Discord: https://discord.gg/YjdS6wrbUj
 '''
 
 root = pathlib.Path('.')

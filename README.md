@@ -69,6 +69,8 @@ Pour l'instant, je n'ai pu tester que **Mario Kart 8 Deluxe**, **Super Mario Mak
 - **Erreur 2306-0802 / « Unable to connect to the server »** : le plus souvent, tu n'es pas connecté **dans DEN** (voir plus haut). Sinon, vérifie que ton adresse e-mail est confirmée sur nextendo.network, que ton compte est [lié à Discord](https://wiki.nextendo.network/guide/discord-link), qu'il est actif et que tu n'es pas déjà en ligne sur un autre appareil.
 - **Pokémon Légendes : Z-A** (2.0.2) : le mode en ligne marche, mais rejoindre la room d'un ami peut être long ou échouer si l'un de vous a un réseau restrictif (Wi-Fi d'entreprise, données mobiles) ou est très loin. Réessaie en Wi-Fi, l'hôte restant sur l'écran de la room.
 - **Pokémon Écarlate / Violet** : pas encore de jeu en ligne.
+- **Pokémon Légendes : Z-A** (2.0.2) : le mode en ligne marche, mais rejoindre la room d'un ami peut être long ou échouer si l'un de vous a un réseau restrictif (Wi-Fi d'entreprise, données mobiles) ou est très loin. Réessaie en Wi-Fi, l'hôte restant sur l'écran de la room.
+- **Pokémon Écarlate / Violet** : pas encore de jeu en ligne.
 - **Splatoon 3** : le jeu se lance mais a des problèmes graphiques (limite connue).
 - **Stabilité** : testé surtout sur **Retroid Pocket 5**. Un appareil en surcadençage ou qui chauffe peut avoir des chutes de FPS et des déconnexions. Les émulateurs Android sur PC (BlueStacks, etc.) ne sont pas recommandés : préfère un vrai appareil arm64.
 
@@ -162,6 +164,8 @@ So far I have only been able to test **Mario Kart 8 Deluxe**, **Super Mario Make
 ## ⚠️ What doesn't work (yet)
 
 - **Error 2306-0802 / "Unable to connect to the server"**: most often you are not signed in **inside DEN** (see above). Otherwise check that your e-mail is confirmed on nextendo.network, that your account is [linked to Discord](https://wiki.nextendo.network/guide/discord-link), that it is active and that you are not already online on another device.
+- **Pokémon Legends: Z-A** (2.0.2): online mode works, but joining a friend's room can be slow or fail if one of you is on a restrictive network (company Wi-Fi, mobile data) or very far away. Retry on Wi-Fi, with the host staying on the room screen.
+- **Pokémon Scarlet / Violet**: no online play yet.
 - **Pokémon Legends: Z-A** (2.0.2): online mode works, but joining a friend's room can be slow or fail if one of you is on a restrictive network (company Wi-Fi, mobile data) or very far away. Retry on Wi-Fi, with the host staying on the room screen.
 - **Pokémon Scarlet / Violet**: no online play yet.
 - **Splatoon 3**: the game launches but has graphical issues (known limitation).
