@@ -44,7 +44,7 @@ std::string GetCaCertPathOverride() {
 namespace {
 
 constexpr const char* CanonicalUrl = "https://nextendo.network";
-constexpr const char* ClientId = "nxc_dS2ke6Lv4wHi";
+constexpr const char* ClientId = "nxc_z_fetCuVO1qx";
 constexpr int TimeoutSeconds = 15;
 
 struct Callback {
