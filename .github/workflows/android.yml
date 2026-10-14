@@ -1,6 +1,20 @@
 name: Build Android
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - 'dist/**'
+      - '.github/workflows/discord-release.yml'
+      - '.github/workflows/turnip.yml'
+
+# Un nouveau push annule le build precedent encore en cours.
+concurrency:
+  group: build-android
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -38,3 +52,4 @@ jobs:
           name: DEN
           path: artifacts/*
           if-no-files-found: warn
+          retention-days: 3
