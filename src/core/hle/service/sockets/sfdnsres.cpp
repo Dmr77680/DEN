@@ -131,7 +131,8 @@ static bool RedirectionNextendoActive() {
     return v != "0" && v != "false" && v != "no" && v != "off";
 }
 
-static std::optional<std::string> GetNextendoRedirectIp(const std::string& host) {
+static std::optional<std::string> GetNextendoRedirectIp(const std::string& host,
+                                                        u64 program_id) {
     if (!RedirectionNextendoActive()) {
         return std::nullopt;
     }
@@ -140,6 +141,14 @@ static std::optional<std::string> GetNextendoRedirectIp(const std::string& host)
         GetConfiguredIp(Settings::values.nextendo_server_ip.GetValue(), "NEXTENDO_SERVER_IP");
     const std::string nat_ip =
         GetConfiguredIp(Settings::values.nextendo_nat_ip.GetValue(), "NEXTENDO_NAT_IP");
+
+    // DEN_DBFZ: Dragon Ball FighterZ signs in to Bandai Namco's own API before any NEX traffic.
+    // Only redirected while that game runs.
+    constexpr u64 DragonBallFighterZ = 0x0100A250097F0000ULL;
+    if (program_id == DragonBallFighterZ && host == "dbf.channel.or.jp") {
+        LOG_INFO(Service, "[Nextendo] Redirecting DBFZ API host '{}' -> '{}'", host, server_ip);
+        return server_ip;
+    }
 
     if (host.starts_with("nncs2-") && host.ends_with(".n.n.srv.nintendo.net")) {
         LOG_INFO(Service, "[Nextendo] Redirecting NAT check host '{}' -> '{}'", host, nat_ip);
@@ -303,7 +312,7 @@ static std::vector<u8> SerializeAddrInfoAsHostEnt(const std::vector<Network::Add
     return data;
 }
 
-static std::pair<u32, GetAddrInfoError> GetHostByNameRequestImpl(HLERequestContext& ctx) {
+static std::pair<u32, GetAddrInfoError> GetHostByNameRequestImpl(Core::System& system, HLERequestContext& ctx) {
     struct InputParameters {
         u8 use_nsd_resolve;
         u32 cancel_handle;
@@ -327,7 +336,7 @@ static std::pair<u32, GetAddrInfoError> GetHostByNameRequestImpl(HLERequestConte
 
     // [Nextendo] Redirect Nintendo hosts to the Nextendo servers when enabled.
     std::string query_host = host;
-    auto redirect = GetNextendoRedirectIp(host);
+    auto redirect = GetNextendoRedirectIp(host, system.GetApplicationProcessProgramID());
     if (redirect.has_value()) {
         query_host = *redirect;
     } else if (IsBlockedHost(host)) {
@@ -352,7 +361,7 @@ static std::pair<u32, GetAddrInfoError> GetHostByNameRequestImpl(HLERequestConte
 }
 
 void SFDNSRES::GetHostByNameRequest(HLERequestContext& ctx) {
-    auto [data_size, emu_gai_err] = GetHostByNameRequestImpl(ctx);
+    auto [data_size, emu_gai_err] = GetHostByNameRequestImpl(system, ctx);
 
     struct OutputParameters {
         NetDbError netdb_error;
@@ -371,7 +380,7 @@ void SFDNSRES::GetHostByNameRequest(HLERequestContext& ctx) {
 }
 
 void SFDNSRES::GetHostByNameRequestWithOptions(HLERequestContext& ctx) {
-    auto [data_size, emu_gai_err] = GetHostByNameRequestImpl(ctx);
+    auto [data_size, emu_gai_err] = GetHostByNameRequestImpl(system, ctx);
 
     struct OutputParameters {
         u32 data_size;
@@ -438,7 +447,7 @@ static std::vector<u8> SerializeAddrInfo(const std::vector<Network::AddrInfo>& v
     return data;
 }
 
-static std::pair<u32, GetAddrInfoError> GetAddrInfoRequestImpl(HLERequestContext& ctx) {
+static std::pair<u32, GetAddrInfoError> GetAddrInfoRequestImpl(Core::System& system, HLERequestContext& ctx) {
     struct InputParameters {
         u8 use_nsd_resolve;
         u32 cancel_handle;
@@ -537,7 +546,7 @@ static std::pair<u32, GetAddrInfoError> GetAddrInfoRequestImpl(HLERequestContext
 
     // [Nextendo] Redirect Nintendo hosts to the Nextendo servers when enabled.
     std::string query_host = host;
-    auto redirect = GetNextendoRedirectIp(host);
+    auto redirect = GetNextendoRedirectIp(host, system.GetApplicationProcessProgramID());
     if (redirect.has_value()) {
         query_host = *redirect;
     } else if (IsBlockedHost(host)) {
@@ -588,7 +597,7 @@ static std::pair<u32, GetAddrInfoError> GetAddrInfoRequestImpl(HLERequestContext
 }
 
 void SFDNSRES::GetAddrInfoRequest(HLERequestContext& ctx) {
-    auto [data_size, emu_gai_err] = GetAddrInfoRequestImpl(ctx);
+    auto [data_size, emu_gai_err] = GetAddrInfoRequestImpl(system, ctx);
 
     struct OutputParameters {
         Errno bsd_errno;
@@ -622,7 +631,7 @@ void SFDNSRES::GetGaiStringErrorRequest(HLERequestContext& ctx) {
 
 void SFDNSRES::GetAddrInfoRequestWithOptions(HLERequestContext& ctx) {
     // Additional options are ignored
-    auto [data_size, emu_gai_err] = GetAddrInfoRequestImpl(ctx);
+    auto [data_size, emu_gai_err] = GetAddrInfoRequestImpl(system, ctx);
 
     struct OutputParameters {
         u32 data_size;
