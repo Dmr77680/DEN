@@ -37,6 +37,24 @@
 namespace Service::Sockets {
 
 namespace {
+// DEN_TCPDIAG: journal des sockets TCP "bruts" (hors TLS), pour comprendre ce que fait un jeu
+// apres sa connexion NEX (Dragon Ball FighterZ). Limite : 80 lignes d'echange par lancement.
+std::string DenHexHead(std::span<const u8> data, std::size_t max_bytes = 40) {
+    static constexpr char digits[] = "0123456789abcdef";
+    std::string out;
+    const std::size_t n = std::min(data.size(), max_bytes);
+    out.reserve(n * 2);
+    for (std::size_t i = 0; i < n; ++i) {
+        out.push_back(digits[data[i] >> 4]);
+        out.push_back(digits[data[i] & 0xF]);
+    }
+    return out;
+}
+std::atomic<int> g_den_tcp_budget{80};
+bool DenTcpBudget() {
+    return g_den_tcp_budget.fetch_sub(1) > 0;
+}
+
 
 // DEN_PORTKEEPER : sockets UDP fermes par le jeu, gardes quelques secondes pour etre rendus au rebind.
 struct ParkedUdp {
@@ -1237,6 +1255,10 @@ Errno BSD_USA::ConnectImpl(s32 fd, std::span<const u8> addr) {
     }
 
     const Errno result = Translate(file_descriptors[fd]->socket->Connect(translated_addr));
+    // DEN_TCPDIAG
+    LOG_INFO(Service, "[Nextendo][TCP] Connect fd={} to {}:{} -> errno={}", fd,
+             Network::IPv4AddressToString(translated_addr.ip), translated_addr.portno,
+             static_cast<int>(result));
 
     if (result == Errno::ISCONN) {
         LOG_DEBUG(Service, "returned ISCONN - socket already connected");
@@ -1488,6 +1510,13 @@ std::pair<s32, Errno> BSD_USA::RecvImpl(s32 fd, u32 flags, std::vector<u8>& mess
     }
 
     const auto [ret, bsd_errno] = Translate(descriptor.socket->Recv(flags, message));
+    // DEN_TCPDIAG : on ne trace que les lectures qui rendent des octets, ou une vraie erreur.
+    if (descriptor.is_connection_based && (ret > 0 || (ret < 0 && bsd_errno != Errno::AGAIN)) &&
+        DenTcpBudget()) {
+        LOG_INFO(Service, "[Nextendo][TCP] Recv fd={} ret={} errno={} data={}", fd, ret,
+                 static_cast<int>(bsd_errno),
+                 ret > 0 ? DenHexHead(message) : std::string{});
+    }
 
     // Restore original state
     if ((descriptor.flags & FLAG_O_NONBLOCK) == 0) {
@@ -1588,7 +1617,14 @@ std::pair<s32, Errno> BSD_USA::SendImpl(s32 fd, u32 flags, std::span<const u8> m
         LOG_WARNING(Service, "Uninitialized socket");
         return {-1, Errno::BADF};
     }
-    return Translate(file_descriptors[fd]->socket->Send(message, flags));
+    // DEN_TCPDIAG
+    const auto send_result = Translate(file_descriptors[fd]->socket->Send(message, flags));
+    if (file_descriptors[fd]->is_connection_based && DenTcpBudget()) {
+        LOG_INFO(Service, "[Nextendo][TCP] Send fd={} len={} -> ret={} errno={} data={}", fd,
+                 message.size(), send_result.first, static_cast<int>(send_result.second),
+                 DenHexHead(message));
+    }
+    return send_result;
 }
 
 std::pair<s32, Errno> BSD_USA::SendToImpl(s32 fd, u32 flags, std::span<const u8> message,
