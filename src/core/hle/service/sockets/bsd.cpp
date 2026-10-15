@@ -10,6 +10,7 @@
 #include <chrono>
 #include <map>
 #include <mutex>
+#include <cstdio>
 #include <cstring>
 #include <memory>
 #include <tuple>
@@ -1201,6 +1202,37 @@ Errno BSD_USA::ConnectImpl(s32 fd, std::span<const u8> addr) {
                      "port {} from an earlier redirected resolution",
                      fd, Network::IPv4AddressToString(*recovered), translated_addr.portno);
             translated_addr.ip = *recovered;
+        }
+    }
+
+    // DEN_GAMESYNC: Pokemon Scarlet/Violet talk to Nintendo's "Gamesync" service over TCP on port
+    // 7575 (the same port Splatoon 3's gRPC uses). On the Nextendo server that port belongs to
+    // Splatoon 3, so Scarlet/Violet get no answer and give up with a network error. Their TCP
+    // connections go to the server's dedicated Gamesync listener instead (same as Citron).
+    {
+        constexpr u16 kGamesyncPort = 7575;
+        constexpr u16 kGamesyncDedicatedPort = 8463;
+        const u64 program_id = system.GetApplicationProcessProgramID();
+        const bool pokemon_sv = program_id == 0x01008F6008C5E000ULL ||
+                                program_id == 0x0100A3D008C5C000ULL;
+        if (pokemon_sv && file_descriptors[fd]->is_connection_based &&
+            translated_addr.portno == kGamesyncPort) {
+            unsigned a = 0, b = 0, c = 0, d = 0;
+            const std::string server_ip = Settings::values.nextendo_server_ip.GetValue();
+            if (std::sscanf(server_ip.c_str(), "%u.%u.%u.%u", &a, &b, &c, &d) == 4 &&
+                a < 256 && b < 256 && c < 256 && d < 256) {
+                const std::array<u8, 4> server{static_cast<u8>(a), static_cast<u8>(b),
+                                               static_cast<u8>(c), static_cast<u8>(d)};
+                if (translated_addr.ip == zero_addr) {
+                    translated_addr.ip = server;
+                }
+                if (translated_addr.ip == server) {
+                    LOG_INFO(Service,
+                             "[Nextendo] Scarlet/Violet Gamesync fd={} -> port {} (listener dedie)",
+                             fd, kGamesyncDedicatedPort);
+                    translated_addr.portno = kGamesyncDedicatedPort;
+                }
+            }
         }
     }
 
