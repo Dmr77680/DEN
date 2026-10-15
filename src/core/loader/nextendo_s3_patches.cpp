@@ -163,10 +163,21 @@ constexpr std::array<u8, 39> kPokemonZaPatchesData{{
 }};
 constexpr std::array<std::span<const u8>, 1> kPokemonZaPatches{{kPokemonZaPatchesData}};
 
+// DEN_SV_PATCH: Pokemon Violet 3.0.1/4.0.0 et Scarlet 4.0.0 : certificat epingle + 2 verifications
+// du nom du pair, memes offsets dans les deux jeux (memes octets que citron-nextendo).
+constexpr std::array<u8, 39> kPokemonSvPatchesData{{
+    0x49, 0x50, 0x53, 0x33, 0x32,
+    0x00, 0x1F, 0xEF, 0xA0, 0x00, 0x04, 0x2A, 0x00, 0x80, 0x52,
+    0x00, 0x1F, 0xE5, 0xB4, 0x00, 0x04, 0x1F, 0x20, 0x03, 0xD5,
+    0x00, 0x1F, 0xE6, 0x58, 0x00, 0x04, 0x1F, 0x20, 0x03, 0xD5,
+    0x45, 0x45, 0x4F, 0x46,
+}};
+constexpr std::array<std::span<const u8>, 1> kPokemonSvPatches{{kPokemonSvPatchesData}};
+
 // NSO build ID -> which patches it needs. An unrecognized build gets nothing, exactly like an
 // .ips file whose name didn't match any program. Splatoon 3 v11.3.0's build was verified
 // byte-identical to v11.2.0's at all three patch offsets before adding it here.
-constexpr std::array<KnownBuild, 9> kKnownBuilds{{
+constexpr std::array<KnownBuild, 11> kKnownBuilds{{
     {"6830B3A12406CB4716FEC5ADDC35D3E2DC92D212", kSplatoon3PeerPatches},
     {"726D2B882DD9EF10F4A9D73EED088740630FB6C8", kSplatoon3CertOnlyPatches},
     {"28C4287AEE36F7499DA60F3E68B54C70DA382D75", kSplatoon3PeerPatches},
@@ -176,6 +187,8 @@ constexpr std::array<KnownBuild, 9> kKnownBuilds{{
     {"1C689518406930512C13DDF4217E7676", kCtrPatches},
     {"D70CE1726C979E45ED4200E9C2B23B2A258FDC18", kMpj230Patches}, // Jamboree 2.3.0
     {"B1F12FD919EAE86AB8A978317677E64BCE443D1F", kPokemonZaPatches}, // Legends: Z-A 2.0.2
+    {"709BFD66115298640155FCC4979DBA151C7CC79A", kPokemonSvPatches}, // Violet 3.0.1 / 4.0.0
+    {"421C5411B487EB4D049DD065FEC9547773E8E598", kPokemonSvPatches}, // Scarlet 4.0.0
 }};
 
 FileSys::VirtualFile MakeIpsFile(std::span<const u8> bytes) {
