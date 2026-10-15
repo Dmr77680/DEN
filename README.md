@@ -6,6 +6,14 @@ DEN est un fork de l'émulateur Switch **[Eden](https://git.eden-emu.dev/eden-em
 
 > Projet personnel et non officiel. Il n'est affilié ni à l'équipe d'Eden, ni à Citron, ni à Nextendo, ni à Nintendo.
 
+<!-- DEN_PRIVATE -->
+> [!IMPORTANT]
+> ### 🔒 DEN est un projet privé
+>
+> DEN est **mon build personnel**, partagé uniquement avec la communauté de mon **[Discord de DEN](https://discord.gg/YjdS6wrbUj)**. Ce n'est pas un build officiel de Nextendo et il n'est pas soutenu par l'équipe de Nextendo.
+>
+> **Tout se passe sur le Discord de DEN** : aide, questions, bugs, nouveautés. **Merci de ne parler de DEN sur aucun serveur de Nextendo** (Discord, forum ou autre) et de ne pas leur demander de l'aide pour DEN : ils n'en sont pas responsables.
+
 > [!IMPORTANT]
 > ### 🚨 Tu as l'erreur **2306-0802** (« Unable to connect to the server ») ? Vérifie ces 6 points, dans l'ordre :
 >
@@ -16,7 +24,7 @@ DEN est un fork de l'émulateur Switch **[Eden](https://git.eden-emu.dev/eden-em
 > 5. **Après un plantage** : ferme DEN complètement, attends 2 à 3 minutes, puis relance.
 > 6. **Vérifie que ta console apparaît côté Nextendo** : sur [nextendo.network](https://nextendo.network), clique sur ta photo de profil, puis **Sécurité → « My sessions »**.
 >    Pendant que tu es en ligne dans un jeu, une ligne **« (emulator) · in game »** doit apparaître en plus du navigateur (le nom affiché peut être « Ryujinx (emulator) », c'est normal).
->    Si elle n'apparaît **jamais**, même avec un autre émulateur, le problème vient de ton **compte** et pas de DEN (vérifie d'abord le point 4 : la liaison Discord) : contacte l'équipe Nextendo sur leur [Discord](https://discord.gg/nextendonetwork) en leur donnant ton pseudo.
+>    Si elle n'apparaît **jamais**, même avec un autre émulateur, le problème vient de ton **compte** et pas de DEN (vérifie d'abord le point 4 : la liaison Discord) : contacte l'équipe Nextendo sur leur [Discord](https://discord.gg/nextendonetwork) en leur donnant ton pseudo (uniquement pour ton **compte**, jamais pour parler de DEN).
 >
 > <img src="docs/screenshots/nextendo-security.png" alt="Nextendo : photo de profil, puis Sécurité, bouton My sessions" width="420">
 >
@@ -34,7 +42,7 @@ DEN est un fork de l'émulateur Switch **[Eden](https://git.eden-emu.dev/eden-em
 
 Pour partager, poser tes questions, signaler un bug ou suivre les nouvelles versions de DEN, rejoins le **[Discord de DEN](https://discord.gg/YjdS6wrbUj)**. C'est là que je réponds, plutôt qu'en messages privés.
 
-> Ce serveur est celui de **DEN**. Pour le compte et la liaison Discord de **Nextendo**, c'est toujours le [serveur Nextendo](https://discord.gg/nextendonetwork) qu'il faut rejoindre.
+> Ce serveur est celui de **DEN**. Pour le compte et la liaison Discord de **Nextendo**, c'est toujours le [serveur Nextendo](https://discord.gg/nextendonetwork) qu'il faut rejoindre, mais **uniquement pour le compte** : toute question sur DEN se pose ici, pas chez eux.
 
 ## 🔑 Prérequis : un compte Nextendo
 
@@ -104,6 +112,13 @@ DEN is a fork of the **[Eden](https://git.eden-emu.dev/eden-emu/eden)** Switch e
 > Personal, unofficial project. Not affiliated with the Eden team, Citron, Nextendo or Nintendo.
 
 > [!IMPORTANT]
+> ### 🔒 DEN is a private project
+>
+> DEN is **my personal build**, shared only with the community of my **[DEN Discord](https://discord.gg/YjdS6wrbUj)**. It is not an official Nextendo build and it is not supported by the Nextendo team.
+>
+> **Everything happens on the DEN Discord**: help, questions, bugs, news. **Please do not talk about DEN on any Nextendo server** (Discord, forum or anywhere else) and do not ask them for help with DEN: they are not responsible for it.
+
+> [!IMPORTANT]
 > ### 🚨 Getting error **2306-0802** ("Unable to connect to the server")? Check these 6 things, in order:
 >
 > 1. **You use the latest DEN version**: download `DEN.apk` from the [Releases](../../releases) tab. Older APKs do not have the browser sign-in and cannot play online.
@@ -113,7 +128,7 @@ DEN is a fork of the **[Eden](https://git.eden-emu.dev/eden-emu/eden)** Switch e
 > 5. **After a crash**: fully close DEN, wait 2 to 3 minutes, then relaunch.
 > 6. **Check that your console shows up on Nextendo**: on [nextendo.network](https://nextendo.network), click your profile picture, then **Security → "My sessions"**.
 >    While you are online in a game, an **"(emulator) · in game"** entry must appear next to your browser (the name shown may be "Ryujinx (emulator)", that is normal).
->    If it **never** appears, even with another emulator, the problem comes from your **account**, not from DEN (check point 4 first, especially the Discord link): contact the Nextendo team on their [Discord](https://discord.gg/nextendonetwork) and give them your username.
+>    If it **never** appears, even with another emulator, the problem comes from your **account**, not from DEN (check point 4 first, especially the Discord link): contact the Nextendo team on their [Discord](https://discord.gg/nextendonetwork) and give them your username (for your **account** only, never to talk about DEN).
 >
 > <img src="docs/screenshots/nextendo-security.png" alt="Nextendo: profile picture, then Security, My sessions button" width="420">
 >
@@ -131,7 +146,7 @@ DEN is a fork of the **[Eden](https://git.eden-emu.dev/eden-emu/eden)** Switch e
 
 To share, ask questions, report a bug or follow new DEN versions, join the **[DEN Discord](https://discord.gg/YjdS6wrbUj)**. That is where I answer, rather than in private messages.
 
-> This server is for **DEN**. For your **Nextendo** account and Discord link, you still need to join the [Nextendo server](https://discord.gg/nextendonetwork).
+> This server is for **DEN**. For your **Nextendo** account and Discord link, you still need to join the [Nextendo server](https://discord.gg/nextendonetwork), but **for the account only**: any question about DEN goes here, not there.
 
 ## 🔑 Requirement: a Nextendo account
 
