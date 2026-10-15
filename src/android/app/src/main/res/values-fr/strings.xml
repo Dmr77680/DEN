@@ -1131,7 +1131,7 @@
     <string name="nextendo_remove_confirm">Supprimer cet ami ?</string>
     <string name="nextendo_friend_removed">Ami supprimé</string>
     <string name="nextendo_signin_required_title">Non connecté à Nextendo</string>
-    <string name="nextendo_signin_required_message">Ce jeu se joue en ligne via Nextendo et vous n\'êtes pas connecté. Sans connexion, le jeu affichera l\'erreur 2306-0802. Connectez-vous d\'abord, puis relancez le jeu.</string>
+    <string name="nextendo_signin_required_message">Ce jeu se joue en ligne via Nextendo et tu n\'as pas de fichier de compte. Sans lui, le jeu affichera l\'erreur 2306-0802. Récupère ton nextendo_account.txt avec l\'app Orange (sur le Discord de DEN), copie-le dans files/config, puis relance le jeu.</string>
     <string name="nextendo_launch_anyway">Lancer quand même</string>
     <string name="den_rng_seed_enable">Graine RNG personnalisée</string>
     <string name="den_rng_seed_description">Utilise une graine fixe pour le générateur de nombres aléatoires. Requis par certains mods en ligne de Smash Bros. Ultimate (mettre la graine à 0).</string>
