@@ -51,6 +51,7 @@ std::string DenHexHead(std::span<const u8> data, std::size_t max_bytes = 40) {
     return out;
 }
 std::atomic<int> g_den_tcp_budget{80};
+std::atomic<int> g_den_poll_budget{200}; // DEN_POLLDIAG
 bool DenTcpBudget() {
     return g_den_tcp_budget.fetch_sub(1) > 0;
 }
@@ -1090,6 +1091,22 @@ std::pair<s32, Errno> BSD_USA::PollImpl(std::vector<u8>& write_buffer, std::span
         return result;
     });
 
+    // DEN_POLLDIAG : on journalise les Poll qui concernent une socket TCP, avant ET apres l'attente.
+    bool den_poll_tcp = false;
+    for (const PollFD& pf : fds) {
+        if (file_descriptors[pf.fd]->is_connection_based) {
+            den_poll_tcp = true;
+        }
+    }
+    const bool den_poll_log = den_poll_tcp && g_den_poll_budget.fetch_sub(1) > 0;
+    if (den_poll_log) {
+        std::string desc;
+        for (const PollFD& pf : fds) {
+            desc += fmt::format(" fd{}:ev=0x{:x}{}", pf.fd, static_cast<u32>(pf.events),
+                                file_descriptors[pf.fd]->is_eventfd ? "(eventfd)" : "");
+        }
+        LOG_INFO(Service, "[Nextendo][POLL] enter nfds={} timeout={}{}", nfds, timeout, desc);
+    }
     const auto result = Network::Poll(host_pollfds, timeout);
 
     const size_t num = host_pollfds.size();
@@ -1098,6 +1115,13 @@ std::pair<s32, Errno> BSD_USA::PollImpl(std::vector<u8>& write_buffer, std::span
     }
     std::memcpy(write_buffer.data(), fds.data(), nfds * sizeof(PollFD));
 
+    if (den_poll_log) {
+        std::string desc;
+        for (const PollFD& pf : fds) {
+            desc += fmt::format(" fd{}:rev=0x{:x}", pf.fd, static_cast<u32>(pf.revents));
+        }
+        LOG_INFO(Service, "[Nextendo][POLL] leave ret={}{}", result.first, desc);
+    }
     return Translate(result);
 }
 
