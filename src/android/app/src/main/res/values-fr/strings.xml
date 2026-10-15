@@ -1140,4 +1140,6 @@
     <string name="den_friend_notif">Notifications d\'amis</string>
     <string name="den_friend_notif_description">Affiche une bannière quand un ami Nextendo se connecte (dans les menus et en jeu).</string>
     <string name="nextendo_friend_online">%1$s est en ligne</string>
+    <string name="nextendo_get_account">Obtenir mon compte (app Orange)</string>
+    <string name="nextendo_open_discord">Ouvrir le Discord de DEN</string>
 </resources>

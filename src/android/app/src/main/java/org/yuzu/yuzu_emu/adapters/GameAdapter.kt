@@ -372,8 +372,8 @@ class GameAdapter(private val activity: AppCompatActivity) :
                     MaterialAlertDialogBuilder(activity)
                         .setTitle(R.string.nextendo_signin_required_title)
                         .setMessage(R.string.nextendo_signin_required_message)
-                        .setPositiveButton(R.string.nextendo_sign_in) { _: DialogInterface?, _: Int ->
-                            org.yuzu.yuzu_emu.utils.NextendoSignInService.start(activity)
+                        .setPositiveButton(R.string.nextendo_open_discord) { _: DialogInterface?, _: Int ->
+                            try { activity.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse("https://discord.gg/YjdS6wrbUj"))) } catch (_: Exception) { } // DEN_ORANGE_UI
                         }
                         .setNeutralButton(R.string.nextendo_launch_anyway) { _: DialogInterface?, _: Int ->
                             launchNow()

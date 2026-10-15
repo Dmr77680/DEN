@@ -1943,4 +1943,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     <string name="den_friend_notif">Friend notifications</string>
     <string name="den_friend_notif_description">Shows a banner when a Nextendo friend comes online (in the menus and in game).</string>
     <string name="nextendo_friend_online">%1$s is online</string>
+    <string name="nextendo_get_account">Get my account (Orange app)</string>
+    <string name="nextendo_open_discord">Open the DEN Discord</string>
 </resources>
