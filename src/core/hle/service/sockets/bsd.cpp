@@ -52,6 +52,7 @@ std::string DenHexHead(std::span<const u8> data, std::size_t max_bytes = 40) {
 }
 std::atomic<int> g_den_tcp_budget{80};
 std::atomic<int> g_den_poll_budget{200}; // DEN_POLLDIAG
+std::atomic<int> g_den_hall_fd{-1}; // DEN_HALLDIAG : fd de la socket du hall (port 60027)
 bool DenTcpBudget() {
     return g_den_tcp_budget.fetch_sub(1) > 0;
 }
@@ -1094,7 +1095,7 @@ std::pair<s32, Errno> BSD_USA::PollImpl(std::vector<u8>& write_buffer, std::span
     // DEN_POLLDIAG : on journalise les Poll qui concernent une socket TCP, avant ET apres l'attente.
     bool den_poll_tcp = false;
     for (const PollFD& pf : fds) {
-        if (file_descriptors[pf.fd]->is_connection_based) {
+        if (pf.fd == g_den_hall_fd.load()) { // DEN_HALLDIAG
             den_poll_tcp = true;
         }
     }
@@ -1283,6 +1284,10 @@ Errno BSD_USA::ConnectImpl(s32 fd, std::span<const u8> addr) {
     LOG_INFO(Service, "[Nextendo][TCP] Connect fd={} to {}:{} -> errno={}", fd,
              Network::IPv4AddressToString(translated_addr.ip), translated_addr.portno,
              static_cast<int>(result));
+    if (translated_addr.portno == 60027 && result == Errno::SUCCESS) { // DEN_HALLDIAG
+        g_den_hall_fd = fd;
+        g_den_poll_budget = 300;
+    }
 
     if (result == Errno::ISCONN) {
         LOG_DEBUG(Service, "returned ISCONN - socket already connected");
@@ -1293,6 +1298,7 @@ Errno BSD_USA::ConnectImpl(s32 fd, std::span<const u8> addr) {
 }
 
 Errno BSD_USA::GetPeerNameImpl(s32 fd, std::vector<u8>& write_buffer) {
+    if (fd == g_den_hall_fd.load()) { LOG_INFO(Service, "[Nextendo][HALL] GetPeerName fd={}", fd); } // DEN_HALLDIAG
     if (!IsFileDescriptorValid(fd)) {
         return Errno::BADF;
     }
@@ -1315,6 +1321,7 @@ Errno BSD_USA::GetPeerNameImpl(s32 fd, std::vector<u8>& write_buffer) {
 }
 
 Errno BSD_USA::GetSockNameImpl(s32 fd, std::vector<u8>& write_buffer) {
+    if (fd == g_den_hall_fd.load()) { LOG_INFO(Service, "[Nextendo][HALL] GetSockName fd={}", fd); } // DEN_HALLDIAG
     if (!IsFileDescriptorValid(fd)) {
         return Errno::BADF;
     }
@@ -1348,6 +1355,7 @@ Errno BSD_USA::ListenImpl(s32 fd, s32 backlog) {
 }
 
 std::pair<s32, Errno> BSD_USA::FcntlImpl(s32 fd, FcntlCmd cmd, s32 arg) {
+    if (fd == g_den_hall_fd.load()) { LOG_INFO(Service, "[Nextendo][HALL] Fcntl fd={} cmd={} arg={}", fd, static_cast<int>(cmd), arg); } // DEN_HALLDIAG
     if (!IsFileDescriptorValid(fd)) {
         return {-1, Errno::BADF};
     }
@@ -1378,6 +1386,7 @@ std::pair<s32, Errno> BSD_USA::FcntlImpl(s32 fd, FcntlCmd cmd, s32 arg) {
 }
 
 Errno BSD_USA::GetSockOptImpl(s32 fd, u32 level, OptName optname, std::vector<u8>& optval) {
+    if (fd == g_den_hall_fd.load()) { LOG_INFO(Service, "[Nextendo][HALL] GetSockOpt fd={} level={} optname=0x{:x}", fd, level, static_cast<u32>(optname)); } // DEN_HALLDIAG
     if (!IsFileDescriptorValid(fd)) {
         return Errno::BADF;
     }
@@ -1420,6 +1429,7 @@ Errno BSD_USA::GetSockOptImpl(s32 fd, u32 level, OptName optname, std::vector<u8
 }
 
 Errno BSD_USA::SetSockOptImpl(s32 fd, u32 level, OptName optname, std::span<const u8> optval) {
+    if (fd == g_den_hall_fd.load()) { LOG_INFO(Service, "[Nextendo][HALL] SetSockOpt fd={} level={} optname=0x{:x} len={}", fd, level, static_cast<u32>(optname), optval.size()); } // DEN_HALLDIAG
     if (!IsFileDescriptorValid(fd)) {
         return Errno::BADF;
     }
