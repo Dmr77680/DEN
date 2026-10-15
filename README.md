@@ -68,7 +68,19 @@ Pour jouer en ligne avec DEN, il te faut un **compte Nextendo gratuit**, à cré
 
 ## 🎮 Jeux testés
 
-Pour l'instant, je n'ai pu tester que **Mario Kart 8 Deluxe**, **Super Mario Maker 2** et **Mario Party Superstars**. Tous les autres jeux compatibles avec Nextendo devraient fonctionner aussi par défaut : **je vous invite à les tester** et à me faire un retour (idéalement avec le `eden_log.txt.old`) en cas de message d'erreur.
+<!-- DEN_GAMES -->
+Jeux testés et qui fonctionnent en ligne :
+
+- ✅ Crash Team Racing Nitro-Fueled
+- ✅ Mario Kart 8 Deluxe
+- ✅ Super Mario Party
+- ✅ Super Mario Maker 2
+- ✅ Super Mario Party Jamboree
+- ✅ Pokémon Légendes : Z-A
+- ✅ Pokkén Tournament DX
+- ✅ Super Smash Bros. Ultimate
+
+Les autres jeux compatibles avec Nextendo devraient fonctionner aussi par défaut : **je vous invite à les tester** et à me faire un retour (idéalement avec le `eden_log.txt.old`) en cas de message d'erreur.
 
 > 💡 **Pense à laisser les shaders se compiler** avant de jouer en ligne (lance le jeu et laisse-le charger ses shaders) : sinon les saccades peuvent provoquer des déconnexions en pleine partie.
 
@@ -170,7 +182,18 @@ To play online with DEN you need a **free Nextendo account**, created at **[next
 
 ## 🎮 Tested games
 
-So far I have only been able to test **Mario Kart 8 Deluxe**, **Super Mario Maker 2** and **Mario Party Superstars**. All the other games compatible with Nextendo should work too by default: **please try them** and send me feedback (ideally with `eden_log.txt.old`) if you get an error message.
+Games tested and working online:
+
+- ✅ Crash Team Racing Nitro-Fueled
+- ✅ Mario Kart 8 Deluxe
+- ✅ Super Mario Party
+- ✅ Super Mario Maker 2
+- ✅ Super Mario Party Jamboree
+- ✅ Pokémon Legends: Z-A
+- ✅ Pokkén Tournament DX
+- ✅ Super Smash Bros. Ultimate
+
+The other games compatible with Nextendo should work too by default: **please try them** and send me feedback (ideally with `eden_log.txt.old`) if you get an error message.
 
 > 💡 **Make sure your shaders are compiled** before playing online (launch the game and let it finish loading its shaders): otherwise stutters can cause disconnections mid-match.
 
