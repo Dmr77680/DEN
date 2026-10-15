@@ -71,6 +71,22 @@ private:
         Errno bsd_errno{};
     };
 
+    struct SelectWork { // DEN_SELECT
+        void Execute(BSD_USA* bsd);
+        void Response(HLERequestContext& ctx);
+
+        s32 nfds;
+        s32 timeout;
+        std::span<const u8> read_in;
+        std::span<const u8> write_in;
+        std::span<const u8> error_in;
+        std::vector<u8> read_out;
+        std::vector<u8> write_out;
+        std::vector<u8> error_out;
+        s32 ret{};
+        Errno bsd_errno{};
+    };
+
     struct AcceptWork {
         void Execute(BSD_USA* bsd);
         void Response(HLERequestContext& ctx);
@@ -168,6 +184,10 @@ private:
     void ExecuteWork(HLERequestContext& ctx, Work work);
 
     std::pair<s32, Errno> SocketImpl(Domain domain, Type type, Protocol protocol);
+    std::pair<s32, Errno> SelectImpl(s32 nfds, s32 timeout, std::span<const u8> read_in, // DEN_SELECT
+                                     std::span<const u8> write_in, std::span<const u8> error_in,
+                                     std::vector<u8>& read_out, std::vector<u8>& write_out,
+                                     std::vector<u8>& error_out);
     std::pair<s32, Errno> PollImpl(std::vector<u8>& write_buffer, std::span<const u8> read_buffer, s32 nfds, s32 timeout);
     std::pair<s32, Errno> AcceptImpl(s32 fd, std::vector<u8>& write_buffer);
     Errno BindImpl(s32 fd, std::span<const u8> addr);

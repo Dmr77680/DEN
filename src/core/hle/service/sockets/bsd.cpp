@@ -122,6 +122,28 @@ void BSD_USA::PollWork::Response(HLERequestContext& ctx) {
     rb.PushEnum(bsd_errno);
 }
 
+void BSD_USA::SelectWork::Execute(BSD_USA* bsd) { // DEN_SELECT
+    std::tie(ret, bsd_errno) =
+        bsd->SelectImpl(nfds, timeout, read_in, write_in, error_in, read_out, write_out, error_out);
+}
+
+void BSD_USA::SelectWork::Response(HLERequestContext& ctx) {
+    if (read_out.size() > 0) {
+        ctx.WriteBuffer(read_out, 0);
+    }
+    if (write_out.size() > 0) {
+        ctx.WriteBuffer(write_out, 1);
+    }
+    if (error_out.size() > 0) {
+        ctx.WriteBuffer(error_out, 2);
+    }
+
+    IPC::ResponseBuilder rb{ctx, 4};
+    rb.Push(ResultSuccess);
+    rb.Push<s32>(ret);
+    rb.PushEnum(bsd_errno);
+}
+
 void BSD_USA::AcceptWork::Execute(BSD_USA* bsd) {
     std::tie(ret, bsd_errno) = bsd->AcceptImpl(fd, write_buffer);
 }
@@ -253,14 +275,23 @@ void BSD_USA::SocketExempt(HLERequestContext& ctx) {
     rb.PushEnum(bsd_errno);
 }
 
-void BSD_USA::Select(HLERequestContext& ctx) {
-    LOG_DEBUG(Service, "(STUBBED) called");
+void BSD_USA::Select(HLERequestContext& ctx) { // DEN_SELECT
+    IPC::RequestParser rp{ctx};
+    const s32 nfds = rp.Pop<s32>();
+    const s32 timeout = rp.Pop<s32>();
 
-    IPC::ResponseBuilder rb{ctx, 4};
+    LOG_DEBUG(Service, "called. nfds={} timeout={}", nfds, timeout);
 
-    rb.Push(ResultSuccess);
-    rb.Push<u32>(0); // ret
-    rb.Push<u32>(0); // bsd errno
+    ExecuteWork(ctx, SelectWork{
+                         .nfds = nfds,
+                         .timeout = timeout,
+                         .read_in = ctx.CanReadBuffer(0) ? ctx.ReadBuffer(0) : std::span<const u8>{},
+                         .write_in = ctx.CanReadBuffer(1) ? ctx.ReadBuffer(1) : std::span<const u8>{},
+                         .error_in = ctx.CanReadBuffer(2) ? ctx.ReadBuffer(2) : std::span<const u8>{},
+                         .read_out = std::vector<u8>(ctx.GetWriteBufferSize(0)),
+                         .write_out = std::vector<u8>(ctx.GetWriteBufferSize(1)),
+                         .error_out = std::vector<u8>(ctx.GetWriteBufferSize(2)),
+                     });
 }
 
 void BSD_USA::Poll(HLERequestContext& ctx) {
@@ -1124,6 +1155,126 @@ std::pair<s32, Errno> BSD_USA::PollImpl(std::vector<u8>& write_buffer, std::span
         LOG_INFO(Service, "[Nextendo][POLL] leave ret={}{}", result.first, desc);
     }
     return Translate(result);
+}
+
+namespace { // DEN_SELECT
+// fd_set = tableau d'octets, bit i (poids faible d'abord) == fd i.
+void DenExtractFdsFromMask(std::span<const u8> mask, std::vector<s32>& out) {
+    for (size_t byte_idx = 0; byte_idx < mask.size(); ++byte_idx) {
+        const u8 current = mask[byte_idx];
+        for (int bit = 0; bit < 8; ++bit) {
+            if (current & (1u << bit)) {
+                out.push_back(static_cast<s32>(byte_idx * 8 + bit));
+            }
+        }
+    }
+}
+
+void DenSetFdInMask(std::vector<u8>& mask, s32 fd) {
+    const size_t byte_idx = static_cast<size_t>(fd) / 8;
+    if (byte_idx < mask.size()) {
+        mask[byte_idx] |= static_cast<u8>(1u << (fd % 8));
+    }
+}
+} // namespace
+
+std::pair<s32, Errno> BSD_USA::SelectImpl(s32 nfds, s32 timeout, std::span<const u8> read_in,
+                                          std::span<const u8> write_in,
+                                          std::span<const u8> error_in,
+                                          std::vector<u8>& read_out, std::vector<u8>& write_out,
+                                          std::vector<u8>& error_out) {
+    std::ranges::fill(read_out, 0);
+    std::ranges::fill(write_out, 0);
+    std::ranges::fill(error_out, 0);
+
+    std::vector<s32> read_fds;
+    std::vector<s32> write_fds;
+    std::vector<s32> error_fds;
+    DenExtractFdsFromMask(read_in, read_fds);
+    DenExtractFdsFromMask(write_in, write_fds);
+    DenExtractFdsFromMask(error_in, error_fds);
+
+    if (nfds <= 0 || (read_fds.empty() && write_fds.empty() && error_fds.empty())) {
+        return {0, Errno::SUCCESS};
+    }
+
+    struct Entry {
+        s32 fd;
+        Network::PollEvents requested{};
+    };
+    std::vector<Entry> entries;
+    const auto add = [&](const std::vector<s32>& fds, Network::PollEvents event) {
+        for (const s32 fd : fds) {
+            const auto it =
+                std::ranges::find_if(entries, [fd](const Entry& e) { return e.fd == fd; });
+            if (it != entries.end()) {
+                it->requested |= event;
+            } else {
+                entries.push_back({fd, event});
+            }
+        }
+    };
+    add(read_fds, Network::PollEvents::In);
+    add(write_fds, Network::PollEvents::Out);
+
+    std::vector<s32> polled_fds;
+    std::vector<Network::PollFD> host_pollfds;
+    polled_fds.reserve(entries.size());
+    host_pollfds.reserve(entries.size());
+    for (const Entry& entry : entries) {
+        if (entry.fd < 0 || entry.fd >= static_cast<s32>(MAX_FD) || !file_descriptors[entry.fd] ||
+            !file_descriptors[entry.fd]->socket) {
+            continue;
+        }
+        polled_fds.push_back(entry.fd);
+        host_pollfds.push_back(Network::PollFD{
+            .socket = file_descriptors[entry.fd]->socket.get(),
+            .events = entry.requested,
+            .revents = Network::PollEvents{},
+        });
+    }
+
+    const bool den_hall = std::ranges::find(polled_fds, g_den_hall_fd.load()) != polled_fds.end();
+    if (den_hall) {
+        LOG_INFO(Service, "[Nextendo][HALL] Select nfds={} timeout={} lecture={} ecriture={}", nfds,
+                 timeout, read_fds.size(), write_fds.size());
+    }
+
+    const auto [poll_ret, poll_errno] = Translate(Network::Poll(host_pollfds, timeout));
+    if (poll_errno != Errno::SUCCESS) {
+        return {poll_ret, poll_errno};
+    }
+
+    constexpr auto err_like =
+        Network::PollEvents::Err | Network::PollEvents::Hup | Network::PollEvents::Nval;
+    s32 ready = 0;
+    for (size_t i = 0; i < host_pollfds.size(); ++i) {
+        const s32 fd = polled_fds[i];
+        const Network::PollEvents revents = host_pollfds[i].revents;
+        bool counted = false;
+        if (True(host_pollfds[i].events & Network::PollEvents::In) &&
+            True(revents & (Network::PollEvents::In | err_like))) {
+            DenSetFdInMask(read_out, fd);
+            counted = true;
+        }
+        if (True(host_pollfds[i].events & Network::PollEvents::Out) &&
+            True(revents & (Network::PollEvents::Out | err_like))) {
+            DenSetFdInMask(write_out, fd);
+            counted = true;
+        }
+        if (True(revents & (Network::PollEvents::Err | Network::PollEvents::Hup))) {
+            DenSetFdInMask(error_out, fd);
+            counted = true;
+        }
+        if (counted) {
+            ++ready;
+        }
+    }
+
+    if (den_hall) {
+        LOG_INFO(Service, "[Nextendo][HALL] Select resultat={}", ready);
+    }
+    return {ready, Errno::SUCCESS};
 }
 
 std::pair<s32, Errno> BSD_USA::AcceptImpl(s32 fd, std::vector<u8>& write_buffer) {
