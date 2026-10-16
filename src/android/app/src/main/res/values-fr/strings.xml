@@ -1084,6 +1084,22 @@
     <string name="add_folders">Ajouter un dossier</string>
     <string name="percent">%1$d%%</string>
 
+    <!-- DEN_CHAT -->
+    <string name="den_chat_hint">\u00c9cris un message\u2026</string>
+    <string name="den_chat_send">Envoyer</string>
+    <string name="den_chat_options">Options</string>
+    <string name="den_chat_empty">Aucun message pour le moment. Dis bonjour !</string>
+    <string name="den_chat_error">Impossible de joindre le chat. R\u00e9essaie dans un instant.</string>
+    <string name="den_chat_block">Bloquer cet ami</string>
+    <string name="den_chat_unblock">D\u00e9bloquer cet ami</string>
+    <string name="den_chat_report">Signaler le dernier message de cet ami</string>
+    <string name="den_chat_blocked_ok">Ami bloqu\u00e9. Tu ne verras plus ses messages.</string>
+    <string name="den_chat_unblocked_ok">Ami d\u00e9bloqu\u00e9.</string>
+    <string name="den_chat_reported">Signalement envoy\u00e9. Merci.</string>
+    <string name="den_chat_no_msg_to_report">Aucun message \u00e0 signaler.</string>
+    <string name="den_chat_new">Nouveau message de %1$s</string>
+    <string name="den_chat_unread">Tu as des messages non lus de %1$s</string>
+    <string name="den_chat_friend_fallback">un ami</string>
     <!-- DEN_I18N : textes Nextendo -->
     <string name="nextendo_friends">Amis</string>
     <string name="nextendo_import_mii">Importer un Mii</string>

@@ -203,6 +203,7 @@ object NextendoFriendsDialog {
             return row
         }
 
+        var unreadMap: Map<Long, Int> = emptyMap() // DEN_CHAT
         fun row(f: Friend): View {
             val row = LinearLayout(activity).apply {
                 orientation = LinearLayout.HORIZONTAL
@@ -242,7 +243,7 @@ object NextendoFriendsDialog {
 
             val col = LinearLayout(activity).apply { orientation = LinearLayout.VERTICAL }
             col.addView(TextView(activity).apply {
-                text = f.name
+                text = f.name + (unreadMap[f.pid]?.let { if (it > 0) "  \u2709 $it" else "" } ?: "") // DEN_CHAT
                 textSize = 16f
             })
             val playing = f.status > 0 && (f.appName.isNotEmpty() || f.appId.isNotEmpty())
@@ -256,6 +257,7 @@ object NextendoFriendsDialog {
                 setTextColor(if (f.status > 0) GREEN else GRAY)
             })
             row.addView(col, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+            row.setOnClickListener { DenChat.open(activity, f.pid, f.name) } // DEN_CHAT
             row.setOnLongClickListener { confirmRemove(f); true }
             return row
         }
@@ -293,6 +295,9 @@ object NextendoFriendsDialog {
                 } catch (_: Exception) {
                 }
                 friends.sortWith(compareByDescending<Friend> { it.status }.thenBy { it.name.lowercase() })
+                // DEN_CHAT: messages non lus et noms des amis pour les notifications
+                DenChat.rememberNames(friends.map { Pair(it.pid, it.name) })
+                unreadMap = try { DenChat.unreadCounts() } catch (_: Throwable) { emptyMap() }
                 activity.runOnUiThread {
                     if (!dialog.isShowing) return@runOnUiThread
                     when {

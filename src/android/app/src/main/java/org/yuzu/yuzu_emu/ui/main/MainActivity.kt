@@ -363,6 +363,12 @@ class MainActivity : AppCompatActivity(), ThemeProvider {
         ThemeHelper.setCorrectTheme(this)
         super.onResume()
         applyFullscreenPreference()
+        org.yuzu.yuzu_emu.ui.DenChat.startPolling(this) // DEN_CHAT
+    }
+
+    override fun onPause() { // DEN_CHAT
+        org.yuzu.yuzu_emu.ui.DenChat.stopPolling()
+        super.onPause()
     }
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {

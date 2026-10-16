@@ -1664,6 +1664,13 @@ jstring Java_org_yuzu_yuzu_1emu_NativeLibrary_nextendoAccountName(JNIEnv* env, j
     return Common::Android::ToJString(env, name);
 }
 
+// DEN_CHAT: the Nextendo token proves the identity of the user to the DEN chat server.
+jstring Java_org_yuzu_yuzu_1emu_NativeLibrary_nextendoToken(JNIEnv* env, jclass clazz) {
+    const std::string token =
+        Common::NextendoAccount::IsLinked() ? Common::NextendoAccount::GetToken() : "";
+    return Common::Android::ToJString(env, token);
+}
+
 void Java_org_yuzu_yuzu_1emu_NativeLibrary_nextendoSignOut(JNIEnv* env, jclass clazz) {
     Common::NextendoAccount::Clear();
 }

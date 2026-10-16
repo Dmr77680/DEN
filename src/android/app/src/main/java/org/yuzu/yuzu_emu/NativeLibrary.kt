@@ -716,6 +716,9 @@ object NativeLibrary {
 
     external fun nextendoSignOut()
 
+    // DEN_CHAT: "" when no Nextendo account is linked
+    external fun nextendoToken(): String
+
     // "" when no Nextendo account is linked
     external fun nextendoAccountName(): String
 

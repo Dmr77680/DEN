@@ -1888,6 +1888,22 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     <string name="percent">%1$d%%</string>
 
     <string name="den_update_message">A new version of DEN is available: %1$s\n\nChanges in this version:\n%2$s\n\nDownload and install it now?</string>
+    <!-- DEN_CHAT -->
+    <string name="den_chat_hint">Write a message\u2026</string>
+    <string name="den_chat_send">Send</string>
+    <string name="den_chat_options">Options</string>
+    <string name="den_chat_empty">No messages yet. Say hello!</string>
+    <string name="den_chat_error">Could not reach the chat. Try again in a moment.</string>
+    <string name="den_chat_block">Block this friend</string>
+    <string name="den_chat_unblock">Unblock this friend</string>
+    <string name="den_chat_report">Report the last message from this friend</string>
+    <string name="den_chat_blocked_ok">Friend blocked. You will no longer see their messages.</string>
+    <string name="den_chat_unblocked_ok">Friend unblocked.</string>
+    <string name="den_chat_reported">Report sent. Thank you.</string>
+    <string name="den_chat_no_msg_to_report">No message to report.</string>
+    <string name="den_chat_new">New message from %1$s</string>
+    <string name="den_chat_unread">You have unread messages from %1$s</string>
+    <string name="den_chat_friend_fallback">a friend</string>
     <!-- DEN_I18N : textes Nextendo -->
     <string name="nextendo_friends">Friends</string>
     <string name="nextendo_import_mii">Import a Mii</string>
