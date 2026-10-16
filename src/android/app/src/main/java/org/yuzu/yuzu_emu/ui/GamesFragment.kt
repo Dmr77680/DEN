@@ -156,32 +156,7 @@ class GamesFragment : Fragment() {
 
     private lateinit var mainActivity: MainActivity
 
-    // [Nextendo] Mii import: pick a .charinfo / .mii file and add it to the Mii database
-    private val miiPicker =
-        registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-            if (uri == null) {
-                return@registerForActivityResult
-            }
-            val ctx = requireContext().applicationContext
-            Thread {
-                val code = try {
-                    val bytes = ctx.contentResolver.openInputStream(uri)?.use { it.readBytes() }
-                    if (bytes == null) 1 else org.yuzu.yuzu_emu.NativeLibrary.importMiiFile(bytes)
-                } catch (_: Exception) {
-                    1
-                }
-                val msg = when (code) {
-                    in 10..200 -> ctx.getString(org.yuzu.yuzu_emu.R.string.nextendo_mii_imported_many, code - 10)
-                    0 -> ctx.getString(org.yuzu.yuzu_emu.R.string.nextendo_mii_imported)
-                    1 -> ctx.getString(org.yuzu.yuzu_emu.R.string.nextendo_mii_unrecognized)
-                    2 -> ctx.getString(org.yuzu.yuzu_emu.R.string.nextendo_mii_invalid)
-                    else -> ctx.getString(org.yuzu.yuzu_emu.R.string.nextendo_mii_failed)
-                }
-                android.os.Handler(android.os.Looper.getMainLooper()).post {
-                    Toast.makeText(ctx, msg, Toast.LENGTH_LONG).show()
-                }
-            }.start()
-        }
+    // DEN_NOMII: l'import de Mii a ete retire (les Mii se creent depuis DEN)
     private val getGamesDirectory =
         registerForActivityResult(ActivityResultContracts.OpenDocumentTree()) { result ->
             if (result != null) {
@@ -440,7 +415,6 @@ class GamesFragment : Fragment() {
                 .setItems(
                     arrayOf(
                         getString(org.yuzu.yuzu_emu.R.string.nextendo_friends),
-                        getString(org.yuzu.yuzu_emu.R.string.nextendo_import_mii),
                         getString(org.yuzu.yuzu_emu.R.string.nextendo_country), // DEN_COUNTRY
                         org.yuzu.yuzu_emu.NativeLibrary.nextendoAccountName().let {
                             if (it.isEmpty()) getString(org.yuzu.yuzu_emu.R.string.nextendo_get_account) else getString(org.yuzu.yuzu_emu.R.string.nextendo_sign_out, it)
@@ -450,8 +424,6 @@ class GamesFragment : Fragment() {
                     if (which == 0) {
                         NextendoFriendsDialog.show(requireActivity())
                     } else if (which == 1) {
-                        miiPicker.launch(arrayOf("*/*"))
-                    } else if (which == 2) {
                         NextendoCountry.show(requireContext())
                     } else if (org.yuzu.yuzu_emu.NativeLibrary.nextendoAccountName().isEmpty()) {
                         try { startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse("https://discord.gg/YjdS6wrbUj"))) } catch (_: Exception) { } // DEN_ORANGE_UI
