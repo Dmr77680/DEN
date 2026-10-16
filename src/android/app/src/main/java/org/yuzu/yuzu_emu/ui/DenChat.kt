@@ -143,10 +143,10 @@ object DenChat {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(20), dp(8), dp(20), 0)
             addView(status)
-            // DEN_CHAT_KB : liste plus basse en mode paysage pour laisser la place au clavier
             val landscape = activity.resources.configuration.orientation ==
                 android.content.res.Configuration.ORIENTATION_LANDSCAPE
-            addView(scroll, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(if (landscape) 100 else 300)))
+            minimumHeight = dp(if (landscape) 150 else 300) // DEN_CHAT_KB2
+            addView(scroll, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f))
             addView(bar, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
         }
 
@@ -329,6 +329,22 @@ object DenChat {
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM
         )
         dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
+        // DEN_CHAT_KB2 : clavier ouvert -> la liste se reduit, la zone de saisie reste visible
+        val decor = dialog.window?.decorView
+        if (decor != null) {
+            val land = activity.resources.configuration.orientation ==
+                android.content.res.Configuration.ORIENTATION_LANDSCAPE
+            decor.viewTreeObserver.addOnGlobalLayoutListener {
+                val r = android.graphics.Rect()
+                decor.getWindowVisibleDisplayFrame(r)
+                val kb = r.bottom < activity.resources.displayMetrics.heightPixels * 0.85
+                val want = if (kb) 0 else dp(if (land) 150 else 300)
+                if (box.minimumHeight != want) {
+                    box.minimumHeight = want
+                    scroll.post { scroll.fullScroll(android.view.View.FOCUS_DOWN) }
+                }
+            }
+        }
     }
 
     // ---------- Notification de nouveaux messages (tant que DEN est ouvert) ----------
