@@ -374,6 +374,15 @@ fun runGitCommand(command: List<String>): String {
 }
 
 fun getGitVersion(): String {
+    // DEN_VERSION: le numero de version vient du fichier den-version.txt (ex. 0.4.6)
+    val denFile = File(project.projectDir, "den-version.txt")
+    if (denFile.exists()) {
+        val num = denFile.readText().trim()
+        val hash = runGitCommand(listOf("git", "rev-parse", "--short", "HEAD"))
+        if (num.isNotEmpty()) {
+            return if (hash.isEmpty()) num else "$num-$hash"
+        }
+    }
     val gitVersion = runGitCommand(
         listOf(
             "git",

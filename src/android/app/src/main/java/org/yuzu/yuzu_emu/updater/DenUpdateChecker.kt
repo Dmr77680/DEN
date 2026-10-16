@@ -15,7 +15,8 @@ object DenUpdateChecker {
     /** Retourne la nouvelle version si elle est plus recente que celle installee, sinon null. */
     fun check(installedVersion: String?): NativeLibrary.UpdateResult? {
         return try {
-            val local = parse(installedVersion) ?: return null
+            // DEN_VERSION: version illisible (ancien format) = on propose la mise a jour
+            val local = parse(installedVersion) ?: listOf(0, 0, 0)
             val client = OkHttpClient.Builder().callTimeout(15, TimeUnit.SECONDS).build()
             val request = Request.Builder()
                 .url(LATEST_URL)
