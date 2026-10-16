@@ -1,0 +1,33 @@
+name: Publish update to public channel
+
+# Quand une release est publiee ici, une copie (APK + notes) est publiee dans le depot public
+# den-releases, que l'application interroge au lancement pour proposer la mise a jour.
+on:
+  release:
+    types: [published]
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Copy release to den-releases
+        env:
+          SRC_TOKEN: ${{ github.token }}
+          DST_TOKEN: ${{ secrets.DEN_RELEASES_TOKEN }}
+          TAG: ${{ github.event.release.tag_name }}
+          NAME: ${{ github.event.release.name }}
+          BODY: ${{ github.event.release.body }}
+          SRC: ${{ github.repository }}
+          DST: Dmr77680/den-releases
+        run: |
+          if [ -z "$DST_TOKEN" ]; then
+            echo "DEN_RELEASES_TOKEN absent : copie ignoree."
+            exit 0
+          fi
+          mkdir dl
+          cd dl
+          GH_TOKEN="$SRC_TOKEN" gh release download "$TAG" --repo "$SRC" --pattern '*.apk'
+          ls -la
+          printf '%s' "$BODY" > ../notes.md
+          GH_TOKEN="$DST_TOKEN" gh release create "$TAG" ./*.apk --repo "$DST" \
+            --title "${NAME:-$TAG}" --notes-file ../notes.md --latest

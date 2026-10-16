@@ -1350,9 +1350,7 @@ class SettingsFragmentPresenter(
             add(HeaderSetting(R.string.app_settings))
             add(IntSetting.APP_LANGUAGE.key)
 
-            if (NativeLibrary.isUpdateCheckerEnabled()) {
-                add(BooleanSetting.ENABLE_UPDATE_CHECKS.key)
-            }
+            add(BooleanSetting.ENABLE_UPDATE_CHECKS.key) // DEN_UPDATE
 
             add(BooleanSetting.ENABLE_QUICK_SETTINGS.key)
             add(BooleanSetting.INVERT_CONFIRM_BACK_CONTROLLER_BUTTONS.key)

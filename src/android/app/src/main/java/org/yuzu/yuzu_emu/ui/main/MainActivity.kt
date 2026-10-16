@@ -51,6 +51,7 @@ import org.yuzu.yuzu_emu.features.settings.model.BooleanSetting
 import org.yuzu.yuzu_emu.YuzuApplication
 import org.yuzu.yuzu_emu.updater.APKDownloader
 import org.yuzu.yuzu_emu.updater.APKInstaller
+import org.yuzu.yuzu_emu.updater.DenUpdateChecker
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -163,7 +164,7 @@ class MainActivity : AppCompatActivity(), ThemeProvider {
         val firstTimeSetup = PreferenceManager.getDefaultSharedPreferences(applicationContext)
                 .getBoolean(Settings.PREF_FIRST_APP_LAUNCH, true)
 
-        if (!firstTimeSetup && NativeLibrary.isUpdateCheckerEnabled() && BooleanSetting.ENABLE_UPDATE_CHECKS.getBoolean()) {
+        if (!firstTimeSetup && BooleanSetting.ENABLE_UPDATE_CHECKS.getBoolean()) { // DEN_UPDATE
              checkForUpdates()
         }
         setInsets()
@@ -172,7 +173,12 @@ class MainActivity : AppCompatActivity(), ThemeProvider {
 
     private fun checkForUpdates() {
         Thread {
-            val latestVersion = NativeLibrary.checkForUpdate()
+            val installed = try {
+                packageManager.getPackageInfo(packageName, 0).versionName
+            } catch (e: Exception) {
+                null
+            }
+            val latestVersion = DenUpdateChecker.check(installed)
             if (latestVersion != null) {
                 runOnUiThread {
                     showUpdateDialog(latestVersion)
@@ -185,7 +191,13 @@ class MainActivity : AppCompatActivity(), ThemeProvider {
     private fun showUpdateDialog(release: NativeLibrary.UpdateResult) {
         MaterialAlertDialogBuilder(this)
             .setTitle(R.string.update_available)
-            .setMessage(getString(R.string.update_available_description, release.title))
+            .setMessage(
+                getString(
+                    R.string.den_update_message,
+                    release.title,
+                    DenUpdateChecker.cleanNotes(release.body)
+                )
+            )
             .setPositiveButton(android.R.string.ok) { _, _ ->
                 val assets = release.assets
 
