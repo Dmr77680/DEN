@@ -969,4 +969,134 @@ bool TranslatorVisitor::asimd_VMULL(bool U, bool D, size_t sz, size_t Vn, size_t
     return true;
 }
 
+// DEN_SHA1 : instructions SHA1 ARMv8 en mode 32 bits (utilisees par Monster Hunter Generations Ultimate)
+namespace {
+using DenSha1Fn = IR::U32 (*)(IREmitter&, const IR::U32&, const IR::U32&, const IR::U32&);
+
+IR::U32 DenShaChoose(IREmitter& ir, const IR::U32& x, const IR::U32& y, const IR::U32& z) {
+    return ir.Eor(ir.And(ir.Eor(y, z), x), z);
+}
+
+IR::U32 DenShaMajority(IREmitter& ir, const IR::U32& x, const IR::U32& y, const IR::U32& z) {
+    return ir.Or(ir.And(x, y), ir.And(ir.Or(x, y), z));
+}
+
+IR::U32 DenShaParity(IREmitter& ir, const IR::U32& x, const IR::U32& y, const IR::U32& z) {
+    return ir.Eor(ir.Eor(y, z), x);
+}
+
+bool DenSha1HashUpdate(TranslatorVisitor& v, IREmitter& ir, bool D, size_t Vn, size_t Vd, bool N,
+                       bool Q, bool M, size_t Vm, DenSha1Fn fn) {
+    if (!Q || mcl::bit::get_bit<0>(Vd) || mcl::bit::get_bit<0>(Vn) || mcl::bit::get_bit<0>(Vm)) {
+        return v.UndefinedInstruction();
+    }
+
+    const auto d = ToVector(Q, Vd, D);
+    const auto n = ToVector(Q, Vn, N);
+    const auto m = ToVector(Q, Vm, M);
+
+    IR::U128 x = ir.GetVector(d);
+    IR::U32 y = ir.VectorGetElement(32, ir.GetVector(n), 0);
+    const IR::U128 w = ir.GetVector(m);
+
+    for (size_t i = 0; i < 4; i++) {
+        const IR::U32 low_x = ir.VectorGetElement(32, x, 0);
+        const IR::U32 after_low_x = ir.VectorGetElement(32, x, 1);
+        const IR::U32 before_high_x = ir.VectorGetElement(32, x, 2);
+        const IR::U32 high_x = ir.VectorGetElement(32, x, 3);
+        const IR::U32 t = fn(ir, after_low_x, before_high_x, high_x);
+        const IR::U32 w_segment = ir.VectorGetElement(32, w, i);
+
+        y = ir.Add(ir.Add(ir.Add(y, ir.RotateRight(low_x, ir.Imm8(27))), t), w_segment);
+        x = ir.VectorSetElement(32, x, 1, ir.RotateRight(after_low_x, ir.Imm8(2)));
+
+        const IR::U128 shuffled_x = ir.VectorRotateWholeVectorRight(x, 96);
+        x = ir.VectorSetElement(32, shuffled_x, 0, y);
+        y = high_x;
+    }
+
+    ir.SetVector(d, x);
+    return true;
+}
+}  // namespace
+
+bool TranslatorVisitor::v8_SHA1C(bool D, size_t Vn, size_t Vd, bool N, bool Q, bool M, size_t Vm) {
+    return DenSha1HashUpdate(*this, ir, D, Vn, Vd, N, Q, M, Vm, DenShaChoose);
+}
+
+bool TranslatorVisitor::v8_SHA1P(bool D, size_t Vn, size_t Vd, bool N, bool Q, bool M, size_t Vm) {
+    return DenSha1HashUpdate(*this, ir, D, Vn, Vd, N, Q, M, Vm, DenShaParity);
+}
+
+bool TranslatorVisitor::v8_SHA1M(bool D, size_t Vn, size_t Vd, bool N, bool Q, bool M, size_t Vm) {
+    return DenSha1HashUpdate(*this, ir, D, Vn, Vd, N, Q, M, Vm, DenShaMajority);
+}
+
+bool TranslatorVisitor::v8_SHA1SU0(bool D, size_t Vn, size_t Vd, bool N, bool Q, bool M, size_t Vm) {
+    if (!Q || mcl::bit::get_bit<0>(Vd) || mcl::bit::get_bit<0>(Vn) || mcl::bit::get_bit<0>(Vm)) {
+        return UndefinedInstruction();
+    }
+
+    const auto d = ToVector(Q, Vd, D);
+    const auto n = ToVector(Q, Vn, N);
+    const auto m = ToVector(Q, Vm, M);
+
+    const IR::U128 dv = ir.GetVector(d);
+    const IR::U128 nv = ir.GetVector(n);
+    const IR::U128 mv = ir.GetVector(m);
+
+    IR::U128 result = [&] {
+        const IR::U64 d_high = ir.VectorGetElement(64, dv, 1);
+        const IR::U64 n_low = ir.VectorGetElement(64, nv, 0);
+        const IR::U128 zero = ir.ZeroVector();
+
+        const IR::U128 tmp1 = ir.VectorSetElement(64, zero, 0, d_high);
+        return ir.VectorSetElement(64, tmp1, 1, n_low);
+    }();
+
+    result = ir.VectorEor(ir.VectorEor(result, dv), mv);
+
+    ir.SetVector(d, result);
+    return true;
+}
+
+bool TranslatorVisitor::v8_SHA1H(bool D, size_t sz, size_t Vd, bool M, size_t Vm) {
+    if (sz != 0b10 || mcl::bit::get_bit<0>(Vd) || mcl::bit::get_bit<0>(Vm)) {
+        return UndefinedInstruction();
+    }
+
+    const auto d = ToVector(true, Vd, D);
+    const auto m = ToVector(true, Vm, M);
+
+    const IR::U32 low = ir.VectorGetElement(32, ir.GetVector(m), 0);
+    const IR::U32 rotated = ir.RotateRight(low, ir.Imm8(2));
+
+    ir.SetVector(d, ir.VectorSetElement(32, ir.ZeroVector(), 0, rotated));
+    return true;
+}
+
+bool TranslatorVisitor::v8_SHA1SU1(bool D, size_t sz, size_t Vd, bool M, size_t Vm) {
+    if (sz != 0b10 || mcl::bit::get_bit<0>(Vd) || mcl::bit::get_bit<0>(Vm)) {
+        return UndefinedInstruction();
+    }
+
+    const auto d = ToVector(true, Vd, D);
+    const auto m = ToVector(true, Vm, M);
+
+    const IR::U128 dv = ir.GetVector(d);
+    const IR::U128 nv = ir.GetVector(m);
+
+    const IR::U128 shuffled_n =
+        ir.VectorSetElement(32, ir.VectorRotateWholeVectorRight(nv, 32), 3, ir.Imm32(0));
+    const IR::U128 t = ir.VectorEor(dv, shuffled_n);
+    const IR::U128 rotated_t = ir.VectorRotateLeft(32, t, 1);
+
+    const IR::U32 low_rotated_t = ir.RotateRight(ir.VectorGetElement(32, rotated_t, 0), ir.Imm8(31));
+    const IR::U32 high_t = ir.VectorGetElement(32, rotated_t, 3);
+    const IR::U128 result = ir.VectorSetElement(32, rotated_t, 3, ir.Eor(low_rotated_t, high_t));
+
+    ir.SetVector(d, result);
+    return true;
+}
+
 }  // namespace Dynarmic::A32
