@@ -119,7 +119,18 @@ object DenChat {
         val input = EditText(activity).apply {
             hint = activity.getString(R.string.den_chat_hint)
             filters = arrayOf(android.text.InputFilter.LengthFilter(500))
+            // DEN_CHAT_KB : la touche Entree du clavier envoie le message, le clavier ne passe
+            // pas en plein ecran, et on le force meme avec une manette / un clavier physique.
+            inputType = android.text.InputType.TYPE_CLASS_TEXT or
+                android.text.InputType.TYPE_TEXT_FLAG_CAP_SENTENCES
+            imeOptions = android.view.inputmethod.EditorInfo.IME_ACTION_SEND or
+                android.view.inputmethod.EditorInfo.IME_FLAG_NO_EXTRACT_UI
             maxLines = 4
+            setOnClickListener {
+                val imm = activity.getSystemService(android.content.Context.INPUT_METHOD_SERVICE)
+                    as android.view.inputmethod.InputMethodManager
+                imm.showSoftInput(this, 2) // 2 = SHOW_FORCED
+            }
         }
         val sendBtn = Button(activity).apply { text = activity.getString(R.string.den_chat_send) }
         val bar = LinearLayout(activity).apply {
@@ -132,7 +143,10 @@ object DenChat {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(20), dp(8), dp(20), 0)
             addView(status)
-            addView(scroll, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(300)))
+            // DEN_CHAT_KB : liste plus basse en mode paysage pour laisser la place au clavier
+            val landscape = activity.resources.configuration.orientation ==
+                android.content.res.Configuration.ORIENTATION_LANDSCAPE
+            addView(scroll, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(if (landscape) 100 else 300)))
             addView(bar, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
         }
 
@@ -224,6 +238,15 @@ object DenChat {
                     }
                 }
             }.start()
+        }
+
+        input.setOnEditorActionListener { _, actionId, _ ->
+            if (actionId == android.view.inputmethod.EditorInfo.IME_ACTION_SEND) {
+                sendBtn.performClick()
+                true
+            } else {
+                false
+            }
         }
 
         val dialog = MaterialAlertDialogBuilder(activity)
