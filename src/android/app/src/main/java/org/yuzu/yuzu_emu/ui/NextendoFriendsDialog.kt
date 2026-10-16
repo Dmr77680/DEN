@@ -297,6 +297,7 @@ object NextendoFriendsDialog {
                 friends.sortWith(compareByDescending<Friend> { it.status }.thenBy { it.name.lowercase() })
                 // DEN_CHAT: messages non lus et noms des amis pour les notifications
                 DenChat.rememberNames(friends.map { Pair(it.pid, it.name) })
+                DenChat.publishFriends(friends.map { it.pid }) // DEN_CLAIMS
                 unreadMap = try { DenChat.unreadCounts() } catch (_: Throwable) { emptyMap() }
                 activity.runOnUiThread {
                     if (!dialog.isShowing) return@runOnUiThread

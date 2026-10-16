@@ -70,6 +70,16 @@ object DenChat {
         }
     }
 
+    // DEN_CLAIMS : declare au serveur de chat la liste d'amis de ce telephone (appel bloquant)
+    fun publishFriends(pids: List<Long>) {
+        try {
+            val arr = org.json.JSONArray()
+            for (p in pids) arr.put(p)
+            request("POST", "/v1/friends", JSONObject().put("friends", arr))
+        } catch (_: Throwable) {
+        }
+    }
+
     fun rememberNames(list: List<Pair<Long, String>>) {
         for ((pid, name) in list) {
             if (name.isNotEmpty()) names[pid] = name
