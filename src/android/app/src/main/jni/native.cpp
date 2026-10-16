@@ -1671,6 +1671,11 @@ jstring Java_org_yuzu_yuzu_1emu_NativeLibrary_nextendoToken(JNIEnv* env, jclass 
     return Common::Android::ToJString(env, token);
 }
 
+// DEN_NOAUTH: the chat identity is the (local) Nextendo player id plus a per-phone secret.
+jlong Java_org_yuzu_yuzu_1emu_NativeLibrary_nextendoPid(JNIEnv* env, jclass clazz) {
+    return static_cast<jlong>(Common::NextendoAccount::GetPid());
+}
+
 void Java_org_yuzu_yuzu_1emu_NativeLibrary_nextendoSignOut(JNIEnv* env, jclass clazz) {
     Common::NextendoAccount::Clear();
 }

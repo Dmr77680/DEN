@@ -719,6 +719,9 @@ object NativeLibrary {
     // DEN_CHAT: "" when no Nextendo account is linked
     external fun nextendoToken(): String
 
+    // DEN_NOAUTH: 0 when no Nextendo account is linked
+    external fun nextendoPid(): Long
+
     // "" when no Nextendo account is linked
     external fun nextendoAccountName(): String
 

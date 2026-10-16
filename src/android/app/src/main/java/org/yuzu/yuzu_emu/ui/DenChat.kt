@@ -38,9 +38,30 @@ object DenChat {
 
     class Reply(val code: Int, val json: JSONObject?)
 
+    // DEN_NOAUTH : plus aucun appel a Nextendo cote serveur ; le telephone s'identifie avec
+    // son numero de joueur et un secret aleatoire genere une fois et garde sur le telephone.
+    private fun credential(): String {
+        return try {
+            val pid = NativeLibrary.nextendoPid()
+            if (pid <= 0L) return ""
+            val prefs = org.yuzu.yuzu_emu.YuzuApplication.appContext
+                .getSharedPreferences("den_chat", android.content.Context.MODE_PRIVATE)
+            var secret = prefs.getString("secret", null)
+            if (secret == null || secret.length < 32) {
+                val bytes = ByteArray(32)
+                java.security.SecureRandom().nextBytes(bytes)
+                secret = bytes.joinToString("") { "%02x".format(it) }
+                prefs.edit().putString("secret", secret).apply()
+            }
+            "$pid.$secret"
+        } catch (_: Throwable) {
+            ""
+        }
+    }
+
     private fun request(method: String, path: String, body: JSONObject? = null): Reply {
         return try {
-            val token = NativeLibrary.nextendoToken()
+            val token = credential()
             if (token.isEmpty()) {
                 Reply(401, null)
             } else {
