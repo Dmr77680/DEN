@@ -219,7 +219,7 @@ std::string GetInstalledTitleVersion(Core::System& system) {
     return metadata.first != nullptr ? metadata.first->GetVersionString() : std::string{};
 }
 
-std::string BuildIdToken(const std::string& installed_version) {
+std::string BuildIdToken(const std::string& installed_version, u64 program_id) {
     const auto now = std::chrono::duration_cast<std::chrono::seconds>(
                          std::chrono::system_clock::now().time_since_epoch())
                          .count();
@@ -234,7 +234,12 @@ std::string BuildIdToken(const std::string& installed_version) {
     if (Common::NextendoAccount::IsLinked()) {
         // DEN_NEX_TOKEN: the stored token is the OAuth session; the game needs a fresh nx2.
         const std::string session = Common::NextendoAccount::GetToken();
-        std::string tok = WebService::NextendoApi::FetchNexToken(session);
+        // DEN_MHGU_TOKEN: Monster Hunter Generations Ultimate gets the stored token as-is
+        // (like Citron); every other title keeps the freshly fetched nx2 token.
+        std::string tok;
+        if (program_id != 0x0100770008DD8000ULL) {
+            tok = WebService::NextendoApi::FetchNexToken(session);
+        }
         if (tok.empty()) {
             tok = session;
         }
@@ -280,19 +285,22 @@ std::vector<u8> GetIdTokenBytes(Core::System& system) {
     static std::chrono::steady_clock::time_point expiry{};
     static u64 cached_generation = 0;
     static std::string cached_version;
+    static u64 cached_program_id = 0; // DEN_MHGU_TOKEN
 
     std::lock_guard lock{mutex};
 
     const u64 generation = Common::NextendoAccount::GetGeneration();
     const std::string installed_version = GetInstalledTitleVersion(system);
+    const u64 program_id = system.GetApplicationProcessProgramID();
     const auto now = std::chrono::steady_clock::now();
     if (cached.empty() || now >= expiry || generation != cached_generation ||
-        installed_version != cached_version) {
-        const std::string token = BuildIdToken(installed_version);
+        installed_version != cached_version || program_id != cached_program_id) {
+        const std::string token = BuildIdToken(installed_version, program_id);
         cached.assign(token.begin(), token.end());
         expiry = now + std::chrono::hours{2};
         cached_generation = generation;
         cached_version = installed_version;
+        cached_program_id = program_id;
         LOG_INFO(Service_ACC, "[Nextendo] Issued a signed BAAS id_token ({} bytes)", cached.size());
     }
 
