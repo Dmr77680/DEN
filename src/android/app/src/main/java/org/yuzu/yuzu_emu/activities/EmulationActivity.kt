@@ -251,11 +251,13 @@ class EmulationActivity : AppCompatActivity(), SensorEventListener, InputManager
         notifyPhysicalControllerState()
 
         buildPictureInPictureParams()
+        org.yuzu.yuzu_emu.ui.DenChat.startPolling(this) // DEN_INGAME_NOTIF
     }
 
     override fun onPause() {
         nfcReader.stopScanning()
         stopMotionSensorListener()
+        org.yuzu.yuzu_emu.ui.DenChat.stopPolling(this) // DEN_INGAME_NOTIF
         super.onPause()
     }
 

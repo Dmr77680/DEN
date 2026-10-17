@@ -721,6 +721,7 @@ object NativeLibrary {
 
     // DEN_NOAUTH: 0 when no Nextendo account is linked
     external fun nextendoPid(): Long
+    external fun nextendoPushOnline() // DEN_PRESENCE
 
     // "" when no Nextendo account is linked
     external fun nextendoAccountName(): String

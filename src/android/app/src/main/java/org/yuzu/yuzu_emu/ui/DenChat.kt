@@ -394,17 +394,43 @@ object DenChat {
         }
     }
 
+    // DEN_PRESENCE: en ligne des l'ouverture de DEN (ecran principal) + notifications aussi en jeu
+    private var presenceOn = false
+    private val presenceTick = object : Runnable {
+        override fun run() {
+            if (!presenceOn) return
+            Thread {
+                try {
+                    if (NativeLibrary.nextendoAccountName().isNotEmpty()) NativeLibrary.nextendoPushOnline()
+                } catch (_: Throwable) {
+                }
+            }.start()
+            main.postDelayed(this, 45000)
+        }
+    }
+
     fun startPolling(activity: Activity) {
         hostActivity = activity
+        if (activity.javaClass.simpleName == "MainActivity" && !presenceOn) {
+            presenceOn = true
+            main.post(presenceTick)
+        }
+        if (activity.javaClass.simpleName != "MainActivity") {
+            presenceOn = false
+            main.removeCallbacks(presenceTick)
+        }
         if (polling) return
         polling = true
         firstCheck = true
         main.postDelayed(tick, 4000)
     }
 
-    fun stopPolling() {
+    fun stopPolling(activity: Activity? = null) {
+        if (activity != null && hostActivity != null && hostActivity !== activity) return
         polling = false
         hostActivity = null
+        presenceOn = false
+        main.removeCallbacks(presenceTick)
         main.removeCallbacks(tick)
     }
 

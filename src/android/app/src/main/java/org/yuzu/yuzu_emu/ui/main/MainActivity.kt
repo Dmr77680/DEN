@@ -367,7 +367,7 @@ class MainActivity : AppCompatActivity(), ThemeProvider {
     }
 
     override fun onPause() { // DEN_CHAT
-        org.yuzu.yuzu_emu.ui.DenChat.stopPolling()
+        org.yuzu.yuzu_emu.ui.DenChat.stopPolling(this)
         super.onPause()
     }
 

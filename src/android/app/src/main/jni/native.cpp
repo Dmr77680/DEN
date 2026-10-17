@@ -1676,6 +1676,11 @@ jlong Java_org_yuzu_yuzu_1emu_NativeLibrary_nextendoPid(JNIEnv* env, jclass claz
     return static_cast<jlong>(Common::NextendoAccount::GetPid());
 }
 
+void Java_org_yuzu_yuzu_1emu_NativeLibrary_nextendoPushOnline(JNIEnv* env, jclass clazz) {
+    // DEN_PRESENCE
+    WebService::NextendoApi::PushPresence(1, "", "", "");
+}
+
 void Java_org_yuzu_yuzu_1emu_NativeLibrary_nextendoSignOut(JNIEnv* env, jclass clazz) {
     Common::NextendoAccount::Clear();
 }
