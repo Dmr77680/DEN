@@ -36,10 +36,11 @@
     <item
         android:id="@+id/menu_multiplayer"
         android:icon="@drawable/ic_two_users"
-        android:title="@string/multiplayer" />
+        android:title="@string/den_menu_chat" /> <!-- DEN_MENU_CHAT -->
 
     <item
         android:id="@+id/menu_load_amiibo"
+        android:visible="false"
         android:icon="@drawable/ic_nfc"
         android:title="@string/load_amiibo" />
 

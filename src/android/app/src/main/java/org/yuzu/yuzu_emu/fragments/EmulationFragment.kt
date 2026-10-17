@@ -810,8 +810,9 @@ class EmulationFragment : Fragment(), SurfaceHolder.Callback {
                     true
                 }
 
-                R.id.menu_multiplayer -> {
-                    emulationActivity?.displayMultiplayerDialog()
+                R.id.menu_multiplayer -> { // DEN_MENU_CHAT: friends list + chat, game keeps running
+                    binding.drawerLayout.closeDrawer(binding.quickSettingsSheet)
+                    org.yuzu.yuzu_emu.ui.NextendoFriendsDialog.show(requireActivity())
                     true
                 }
 
