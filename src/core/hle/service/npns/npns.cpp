@@ -4,6 +4,7 @@
 // SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
+#include <array>
 #include <memory>
 
 #include "core/hle/kernel/k_event.h"
@@ -158,7 +159,7 @@ public:
             {5, C<&INpnsUser::GetReceiveEvent>, "GetReceiveEvent"},
             {7, nullptr, "GetStateChangeEvent"},
             {8, C<&INpnsUser::ListenToByName>, "ListenToByName"}, // 18.0.0+
-            {21, nullptr, "CreateToken"},
+            {21, C<&INpnsUser::CreateToken>, "CreateToken"}, // DEN_NPNS2
             {23, nullptr, "DestroyToken"},
             {25, nullptr, "QueryIsTokenValid"},
             {26, C<&INpnsUser::ListenToMyApplicationId>, "ListenToMyApplicationId"}, // DEN_NPNS
@@ -179,6 +180,16 @@ public:
     }
 
 private:
+    Result CreateToken(Out<std::array<u8, 0x28>> out_token, u64 application_id,
+                       ClientProcessId process_id) {
+        // DEN_NPNS2: Animal Crossing asks for a push token after login; hand it a dummy one.
+        // The exact token layout is a best guess.
+        LOG_WARNING(Service_NPNS, "(STUBBED) called, application_id={:016X}", application_id);
+        out_token->fill(u8{'0'});
+        (*out_token)[0x27] = 0;
+        R_SUCCEED();
+    }
+
     Result ListenToMyApplicationId() {
         // DEN_NPNS: Animal Crossing calls this right after logging in; accept it so the game goes on
         LOG_WARNING(Service_NPNS, "(STUBBED) called");
