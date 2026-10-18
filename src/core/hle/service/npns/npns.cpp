@@ -161,7 +161,7 @@ public:
             {21, nullptr, "CreateToken"},
             {23, nullptr, "DestroyToken"},
             {25, nullptr, "QueryIsTokenValid"},
-            {26, nullptr, "ListenToMyApplicationId"},
+            {26, C<&INpnsUser::ListenToMyApplicationId>, "ListenToMyApplicationId"}, // DEN_NPNS
             {101, nullptr, "Suspend"},
             {102, nullptr, "Resume"},
             {103, nullptr, "GetState"},
@@ -179,6 +179,12 @@ public:
     }
 
 private:
+    Result ListenToMyApplicationId() {
+        // DEN_NPNS: Animal Crossing calls this right after logging in; accept it so the game goes on
+        LOG_WARNING(Service_NPNS, "(STUBBED) called");
+        R_SUCCEED();
+    }
+
     Result ListenToByName(InBuffer<BufferAttr_HipcMapAlias> name_buffer) {
         const std::string name(reinterpret_cast<const char*>(name_buffer.data()), name_buffer.size());
         LOG_DEBUG(Service_NPNS, "called, name={}", name);
