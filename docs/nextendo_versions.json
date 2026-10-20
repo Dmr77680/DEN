@@ -1,6 +1,6 @@
 {
   "_comment": "Version exigee par Nextendo pour chaque jeu (identifiant en 16 caracteres minuscules). Modifier ce fichier suffit : DEN le relit toutes les 10 minutes, sans nouveau build.",
-  "0100152000022000": "4.0.0",
+  "0100152000022000": "4.0.1",
   "01006a800016e000": "13.0.5",
   "0100f8f0000a2000": "5.5.2",
   "01003bc0000a0000": "5.5.2",
