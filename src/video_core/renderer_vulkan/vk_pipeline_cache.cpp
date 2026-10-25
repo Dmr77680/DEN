@@ -5,7 +5,10 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <algorithm>
+#include <atomic>
 #include <cstddef>
+#include <cstdio>
+#include <string>
 #include <fstream>
 #include <iostream>
 #include <memory>
@@ -300,6 +303,25 @@ Shader::RuntimeInfo MakeRuntimeInfo(std::span<const Shader::IR::Program> program
     info.force_early_z = key.state.early_z != 0;
     info.y_negate = key.state.y_negate != 0;
     return info;
+}
+
+// DEN_PRELOAD_MEM: memoire disponible (en Mo) lue dans /proc/meminfo, -1 si inconnue.
+constexpr s64 DEN_PRELOAD_MIN_AVAILABLE_MB = 3072;
+s64 DenAvailableMemoryMb() {
+#ifdef __ANDROID__
+    std::ifstream meminfo{"/proc/meminfo"};
+    std::string line;
+    while (std::getline(meminfo, line)) {
+        if (line.rfind("MemAvailable:", 0) == 0) {
+            unsigned long long kb = 0;
+            if (std::sscanf(line.c_str(), "MemAvailable: %llu", &kb) == 1) {
+                return static_cast<s64>(kb / 1024);
+            }
+            return -1;
+        }
+    }
+#endif
+    return -1;
 }
 
 size_t GetTotalPipelineWorkers() {
@@ -621,17 +643,51 @@ void PipelineCache::LoadDiskResources(u64 title_id, std::stop_token stop_loading
         size_t total{};
         size_t built{};
         bool has_loaded{};
+        std::atomic<size_t> checked{};
+        std::atomic<size_t> skipped{};
+        std::atomic<bool> low_memory{false};
         std::unique_ptr<PipelineStatistics> statistics;
     } state;
 
     if (device.IsKhrPipelineExecutablePropertiesEnabled()) {
         state.statistics = std::make_unique<PipelineStatistics>(device);
     }
+    // DEN_PRELOAD_MEM: si la memoire disponible tombe sous le seuil, on arrete de precharger
+    // les shaders (ils seront construits a la demande) pour eviter que Android tue l'appli.
+    const auto skip_for_memory{[&state]() -> bool {
+        if (state.low_memory.load(std::memory_order_relaxed)) {
+            ++state.skipped;
+            return true;
+        }
+        if ((state.checked.fetch_add(1, std::memory_order_relaxed) % 32) != 0) {
+            return false;
+        }
+        const s64 available = DenAvailableMemoryMb();
+        if (available >= 0 && available < DEN_PRELOAD_MIN_AVAILABLE_MB) {
+            if (!state.low_memory.exchange(true)) {
+                LOG_WARNING(Render_Vulkan,
+                            "[DEN] Low memory ({} MB available): stopping shader preload",
+                            available);
+            }
+            ++state.skipped;
+            return true;
+        }
+        return false;
+    }};
     const auto load_compute{[&](std::ifstream& file, FileEnvironment env) {
         ComputePipelineCacheKey key;
         file.read(reinterpret_cast<char*>(&key), sizeof(key));
 
-        workers.QueueWork([this, key, env_ = std::move(env), &state, &callback]() mutable {
+        workers.QueueWork([this, key, env_ = std::move(env), &state, &callback,
+                           &skip_for_memory]() mutable {
+            if (skip_for_memory()) {
+                std::scoped_lock skip_lock{state.mutex};
+                ++state.built;
+                if (state.has_loaded) {
+                    callback(VideoCore::LoadCallbackStage::Build, state.built, state.total);
+                }
+                return;
+            }
             ShaderPools pools;
             auto pipeline{CreateComputePipeline(pools, key, env_, state.statistics.get(), false)};
             std::scoped_lock lock{state.mutex};
@@ -677,7 +733,16 @@ void PipelineCache::LoadDiskResources(u64 title_id, std::stop_token stop_loading
             return;
         }
 
-        workers.QueueWork([this, key, envs_ = std::move(envs), &state, &callback]() mutable {
+        workers.QueueWork([this, key, envs_ = std::move(envs), &state, &callback,
+                           &skip_for_memory]() mutable {
+            if (skip_for_memory()) {
+                std::scoped_lock skip_lock{state.mutex};
+                ++state.built;
+                if (state.has_loaded) {
+                    callback(VideoCore::LoadCallbackStage::Build, state.built, state.total);
+                }
+                return;
+            }
             ShaderPools pools;
             boost::container::static_vector<Shader::Environment*, 5> env_ptrs;
             for (auto& env : envs_) {
@@ -708,6 +773,13 @@ void PipelineCache::LoadDiskResources(u64 title_id, std::stop_token stop_loading
     lock.unlock();
 
     workers.WaitForRequests(stop_loading);
+
+    if (state.skipped.load() > 0) {
+        LOG_WARNING(Render_Vulkan,
+                    "[DEN] Shader preload skipped {} of {} pipelines (low memory); they will be "
+                    "built when first used",
+                    state.skipped.load(), state.total);
+    }
 
     if (use_vulkan_pipeline_cache) {
         SerializeVulkanPipelineCache(vulkan_pipeline_cache_filename, vulkan_pipeline_cache,
