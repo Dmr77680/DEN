@@ -82,9 +82,26 @@ class AboutFragment : Fragment() {
 
         val buildName = getString(R.string.app_name_suffixed)
         val buildVersion = NativeLibrary.getBuildVersion()
-        val fullVersionText = "$buildName ($buildVersion)"
+        // DEN_ABOUT_VERSION: on affiche "DEN v0.5.0" ; le hash reste dans le texte copie (support)
+        val installedVersion = try {
+            requireContext().packageManager
+                .getPackageInfo(requireContext().packageName, 0).versionName
+        } catch (e: Exception) {
+            null
+        }
+        val versionNumber = Regex("^\\d+(\\.\\d+)+").find(installedVersion ?: "")?.value
+        val displayVersionText = if (versionNumber != null) {
+            "$buildName v$versionNumber"
+        } else {
+            "$buildName ($buildVersion)"
+        }
+        val fullVersionText = if (versionNumber != null) {
+            "$buildName v$versionNumber ($buildVersion)"
+        } else {
+            "$buildName ($buildVersion)"
+        }
 
-        binding.textVersionName.text = fullVersionText
+        binding.textVersionName.text = displayVersionText
         binding.buttonVersionName.setOnClickListener {
             val clipBoard =
                 requireContext().getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
