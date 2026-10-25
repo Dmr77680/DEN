@@ -9,6 +9,9 @@
 #include <cstddef>
 #include <cstdio>
 #include <string>
+#ifdef __ANDROID__
+#include <unistd.h>
+#endif
 #include <fstream>
 #include <iostream>
 #include <memory>
@@ -306,7 +309,24 @@ Shader::RuntimeInfo MakeRuntimeInfo(std::span<const Shader::IR::Program> program
 }
 
 // DEN_PRELOAD_MEM: memoire disponible (en Mo) lue dans /proc/meminfo, -1 si inconnue.
-constexpr s64 DEN_PRELOAD_MIN_AVAILABLE_MB = 3072;
+constexpr s64 DEN_PRELOAD_MIN_AVAILABLE_MB = 4096;
+// DEN_PRELOAD_RSS: plafond de croissance de la memoire de l'appli pendant le prechargement.
+constexpr s64 DEN_PRELOAD_MAX_GROWTH_MB = 1024;
+s64 DenProcessRssMb() {
+#ifdef __ANDROID__
+    std::ifstream statm{"/proc/self/statm"};
+    unsigned long long total_pages = 0;
+    unsigned long long resident_pages = 0;
+    if (statm >> total_pages >> resident_pages) {
+        const long page_size = sysconf(_SC_PAGESIZE);
+        if (page_size > 0) {
+            return static_cast<s64>(resident_pages * static_cast<unsigned long long>(page_size) /
+                                    (1024ULL * 1024ULL));
+        }
+    }
+#endif
+    return -1;
+}
 s64 DenAvailableMemoryMb() {
 #ifdef __ANDROID__
     std::ifstream meminfo{"/proc/meminfo"};
@@ -654,7 +674,8 @@ void PipelineCache::LoadDiskResources(u64 title_id, std::stop_token stop_loading
     }
     // DEN_PRELOAD_MEM: si la memoire disponible tombe sous le seuil, on arrete de precharger
     // les shaders (ils seront construits a la demande) pour eviter que Android tue l'appli.
-    const auto skip_for_memory{[&state]() -> bool {
+    const s64 base_rss{DenProcessRssMb()};
+    const auto skip_for_memory{[&state, base_rss]() -> bool {
         if (state.low_memory.load(std::memory_order_relaxed)) {
             ++state.skipped;
             return true;
@@ -663,11 +684,15 @@ void PipelineCache::LoadDiskResources(u64 title_id, std::stop_token stop_loading
             return false;
         }
         const s64 available = DenAvailableMemoryMb();
-        if (available >= 0 && available < DEN_PRELOAD_MIN_AVAILABLE_MB) {
+        const s64 rss = DenProcessRssMb();
+        const bool low_available = available >= 0 && available < DEN_PRELOAD_MIN_AVAILABLE_MB;
+        const bool grown =
+            base_rss >= 0 && rss >= 0 && (rss - base_rss) > DEN_PRELOAD_MAX_GROWTH_MB;
+        if (low_available || grown) {
             if (!state.low_memory.exchange(true)) {
                 LOG_WARNING(Render_Vulkan,
-                            "[DEN] Low memory ({} MB available): stopping shader preload",
-                            available);
+                            "[DEN] Stopping shader preload (available {} MB, grown {} MB)",
+                            available, rss - base_rss);
             }
             ++state.skipped;
             return true;
