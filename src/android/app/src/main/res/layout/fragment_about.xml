@@ -213,6 +213,7 @@
                 <com.google.android.material.button.MaterialButton
                     style="@style/EdenButton.Secondary"
                     android:id="@+id/button_stoat"
+                    android:visibility="gone"
                     android:layout_width="0dp"
                     android:layout_height="56dp"
                     android:layout_weight="1"
@@ -227,6 +228,7 @@
                 <com.google.android.material.button.MaterialButton
                     style="@style/EdenButton.Secondary"
                     android:id="@+id/button_x"
+                    android:visibility="gone"
                     android:layout_width="0dp"
                     android:layout_height="56dp"
                     android:layout_weight="1"
@@ -241,6 +243,7 @@
                 <com.google.android.material.button.MaterialButton
                     style="@style/EdenButton.Secondary"
                     android:id="@+id/button_website"
+                    android:visibility="gone"
                     android:layout_width="0dp"
                     android:layout_height="56dp"
                     android:layout_weight="1"
