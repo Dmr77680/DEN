@@ -309,9 +309,10 @@ Shader::RuntimeInfo MakeRuntimeInfo(std::span<const Shader::IR::Program> program
 }
 
 // DEN_PRELOAD_MEM: memoire disponible (en Mo) lue dans /proc/meminfo, -1 si inconnue.
-constexpr s64 DEN_PRELOAD_MIN_AVAILABLE_MB = 4096;
+// DEN_PRELOAD_V051: seuil abaisse pour ne pas sauter tout le prechargement
+constexpr s64 DEN_PRELOAD_MIN_AVAILABLE_MB = 2500;
 // DEN_PRELOAD_RSS: plafond de croissance de la memoire de l'appli pendant le prechargement.
-constexpr s64 DEN_PRELOAD_MAX_GROWTH_MB = 1024;
+constexpr s64 DEN_PRELOAD_MAX_GROWTH_MB = 2560;
 s64 DenProcessRssMb() {
 #ifdef __ANDROID__
     std::ifstream statm{"/proc/self/statm"};
