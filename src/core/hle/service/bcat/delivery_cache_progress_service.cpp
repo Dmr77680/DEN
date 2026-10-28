@@ -24,7 +24,7 @@ IDeliveryCacheProgressService::IDeliveryCacheProgressService(Core::System& syste
 IDeliveryCacheProgressService::~IDeliveryCacheProgressService() = default;
 
 Result IDeliveryCacheProgressService::GetEvent(OutCopyHandle<Kernel::KReadableEvent> out_event) {
-    LOG_DEBUG(Service_BCAT, "called");
+    LOG_INFO(Service_BCAT, "called");
 
     *out_event = &event;
     R_SUCCEED();
@@ -32,7 +32,7 @@ Result IDeliveryCacheProgressService::GetEvent(OutCopyHandle<Kernel::KReadableEv
 
 Result IDeliveryCacheProgressService::GetImpl(
     OutLargeData<DeliveryCacheProgressImpl, BufferAttr_HipcPointer> out_impl) {
-    LOG_DEBUG(Service_BCAT, "called");
+    LOG_INFO(Service_BCAT, "called");
 
     *out_impl = impl;
     R_SUCCEED();

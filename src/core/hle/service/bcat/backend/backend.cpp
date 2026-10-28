@@ -91,30 +91,31 @@ NullBcatBackend::NullBcatBackend(DirectoryGetter getter) : BcatBackend(std::move
 NullBcatBackend::~NullBcatBackend() = default;
 
 bool NullBcatBackend::Synchronize(Kernel::KernelCore& kernel, TitleIDVersion title, ProgressServiceBackend& progress) {
-    LOG_DEBUG(Service_BCAT, "called, title_id={:016X}, build_id={:016X}", title.title_id, title.build_id);
+    LOG_INFO(Service_BCAT, "called, title_id={:016X}, build_id={:016X}", title.title_id, title.build_id);
     progress.FinishDownload(kernel, ResultSuccess);
     return true;
 }
 
 bool NullBcatBackend::SynchronizeDirectory(Kernel::KernelCore& kernel, TitleIDVersion title, std::string name, ProgressServiceBackend& progress) {
-    LOG_DEBUG(Service_BCAT, "called, title_id={:016X}, build_id={:016X}, name={}", title.title_id, title.build_id, name);
+    LOG_INFO(Service_BCAT, "called, title_id={:016X}, build_id={:016X}, name={}", title.title_id, title.build_id, name);
     progress.FinishDownload(kernel, ResultSuccess);
     return true;
 }
 
 bool NullBcatBackend::Clear(Kernel::KernelCore& kernel, u64 title_id) {
-    LOG_DEBUG(Service_BCAT, "called, title_id={:016X}", title_id);
+    LOG_INFO(Service_BCAT, "called, title_id={:016X}", title_id);
 
     return true;
 }
 
 void NullBcatBackend::SetPassphrase(Kernel::KernelCore& kernel, u64 title_id, const Passphrase& passphrase) {
-    LOG_DEBUG(Service_BCAT, "called, title_id={:016X}, passphrase={}", title_id, Common::HexToString(passphrase));
+    LOG_INFO(Service_BCAT, "called, title_id={:016X}, passphrase={}", title_id, Common::HexToString(passphrase));
 }
 
 std::optional<std::vector<u8>> NullBcatBackend::GetLaunchParameter(Kernel::KernelCore& kernel, TitleIDVersion title) {
-    LOG_DEBUG(Service_BCAT, "called, title_id={:016X}, build_id={:016X}", title.title_id, title.build_id);
+    LOG_INFO(Service_BCAT, "called, title_id={:016X}, build_id={:016X}", title.title_id, title.build_id);
     return std::nullopt;
 }
 
 } // namespace Service::BCAT
+// DEN_BCAT_LOG: appels BCAT journalises au niveau Info (diagnostic Splatoon 2)

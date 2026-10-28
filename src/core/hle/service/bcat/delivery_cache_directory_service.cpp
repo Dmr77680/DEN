@@ -47,7 +47,7 @@ Result IDeliveryCacheDirectoryService::Open(const DirectoryName& dir_name_raw) {
     const auto dir_name =
         Common::StringFromFixedZeroTerminatedBuffer(dir_name_raw.data(), dir_name_raw.size());
 
-    LOG_DEBUG(Service_BCAT, "called, dir_name={}", dir_name);
+    LOG_INFO(Service_BCAT, "called, dir_name={}", dir_name);
 
     R_TRY(VerifyNameValidDir(dir_name_raw));
     R_UNLESS(current_dir == nullptr, ResultEntityAlreadyOpen);
@@ -60,7 +60,7 @@ Result IDeliveryCacheDirectoryService::Open(const DirectoryName& dir_name_raw) {
 
 Result IDeliveryCacheDirectoryService::Read(
     Out<s32> out_count, OutArray<DeliveryCacheDirectoryEntry, BufferAttr_HipcMapAlias> out_buffer) {
-    LOG_DEBUG(Service_BCAT, "called, write_size={:016X}", out_buffer.size());
+    LOG_INFO(Service_BCAT, "called, write_size={:016X}", out_buffer.size());
 
     R_UNLESS(current_dir != nullptr, ResultNoOpenEntry);
 
@@ -77,7 +77,7 @@ Result IDeliveryCacheDirectoryService::Read(
 }
 
 Result IDeliveryCacheDirectoryService::GetCount(Out<s32> out_count) {
-    LOG_DEBUG(Service_BCAT, "called");
+    LOG_INFO(Service_BCAT, "called");
 
     R_UNLESS(current_dir != nullptr, ResultNoOpenEntry);
 

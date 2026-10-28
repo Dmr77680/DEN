@@ -67,7 +67,7 @@ IBcatService::~IBcatService() = default;
 
 Result IBcatService::RequestSyncDeliveryCache(
     OutInterface<IDeliveryCacheProgressService> out_interface) {
-    LOG_DEBUG(Service_BCAT, "called");
+    LOG_INFO(Service_BCAT, "called");
 
     auto& progress_backend{GetProgressBackend(SyncType::Normal)};
     backend.Synchronize(system.Kernel(), {program_id, GetCurrentBuildID(system.GetApplicationProcessBuildID())},
@@ -82,7 +82,7 @@ Result IBcatService::RequestSyncDeliveryCacheWithDirectoryName(
     const DirectoryName& name_raw, OutInterface<IDeliveryCacheProgressService> out_interface) {
     const auto name = Common::StringFromFixedZeroTerminatedBuffer(name_raw.data(), name_raw.size());
 
-    LOG_DEBUG(Service_BCAT, "called, name={}", name);
+    LOG_INFO(Service_BCAT, "called, name={}", name);
 
     auto& progress_backend{GetProgressBackend(SyncType::Directory)};
     backend.SynchronizeDirectory(system.Kernel(), {program_id, GetCurrentBuildID(system.GetApplicationProcessBuildID())},
@@ -95,7 +95,7 @@ Result IBcatService::RequestSyncDeliveryCacheWithDirectoryName(
 
 Result IBcatService::SetPassphrase(u64 application_id,
                                    InBuffer<BufferAttr_HipcPointer> passphrase_buffer) {
-    LOG_DEBUG(Service_BCAT, "called, application_id={:016X}, passphrase={}", application_id,
+    LOG_INFO(Service_BCAT, "called, application_id={:016X}, passphrase={}", application_id,
               Common::HexToString(passphrase_buffer));
 
     R_UNLESS(application_id != 0, ResultInvalidArgument);
@@ -115,7 +115,7 @@ Result IBcatService::RegisterSystemApplicationDeliveryTasks() {
 }
 
 Result IBcatService::ClearDeliveryCacheStorage(u64 application_id) {
-    LOG_DEBUG(Service_BCAT, "called, title_id={:016X}", application_id);
+    LOG_INFO(Service_BCAT, "called, title_id={:016X}", application_id);
 
     R_UNLESS(application_id != 0, ResultInvalidArgument);
     R_UNLESS(backend.Clear(system.Kernel(), application_id), FileSys::ResultPermissionDenied);

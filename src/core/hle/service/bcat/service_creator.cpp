@@ -58,7 +58,7 @@ Result IServiceCreator::CreateDeliveryCacheStorageService(
 
 Result IServiceCreator::CreateDeliveryCacheStorageServiceWithApplicationId(
     u64 application_id, OutInterface<IDeliveryCacheStorageService> out_interface) {
-    LOG_DEBUG(Service_BCAT, "called, application_id={:016X}", application_id);
+    LOG_INFO(Service_BCAT, "called, application_id={:016X}", application_id);
     *out_interface = std::make_shared<IDeliveryCacheStorageService>(
         system, fsc.GetBCATDirectory(application_id));
     R_SUCCEED();
