@@ -585,7 +585,11 @@ u32 CalculateGuestSizeInBytes(const ImageInfo& info) noexcept {
         return info.pitch * Common::DivCeil(info.size.height, DefaultBlockHeight(info.format));
     }
     if (info.resources.layers > 1) {
-        ASSERT(info.layer_stride != 0);
+        // DEN_LAYER_STRIDE: some images report a layer stride of 0; compute it instead of
+        // returning a size of 0, which crashed Splatoon 2 when entering the lobby.
+        if (info.layer_stride == 0) {
+            return CalculateLayerSize(info) * info.resources.layers;
+        }
         return info.layer_stride * info.resources.layers;
     } else {
         return CalculateLayerSize(info);
