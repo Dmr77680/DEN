@@ -30,6 +30,8 @@ jobs:
           java-version: 17
       - name: Licences Android
         run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
+      - name: CMake 3.31.6 (DEN_CMAKE_SDK)
+        run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "cmake;3.31.6" > /dev/null
       - name: Outils de compilation
         run: sudo apt-get update && sudo apt-get install -y ninja-build glslang-tools
       - name: Compilation (essai 1)
