@@ -9,6 +9,8 @@
 #include <cstddef>
 #include <cstdio>
 #include <string>
+#include <mutex>
+#include <unordered_set>
 #ifdef __ANDROID__
 #include <unistd.h>
 #endif
@@ -345,6 +347,30 @@ s64 DenAvailableMemoryMb() {
     return -1;
 }
 
+// DEN_CACHE_DEDUP: un pipeline deja present dans le cache disque n'est ni reconstruit au
+// chargement, ni reecrit pendant la partie. Avant, chaque pipeline non precharge (memoire basse)
+// etait reecrit a chaque session : vulkan.bin se remplissait de doublons et le chargement
+// devenait de plus en plus long et lourd en memoire.
+struct DenKnownKeys {
+    std::mutex mutex;
+    std::unordered_set<size_t> hashes;
+};
+DenKnownKeys& DenKnownKeysInstance() {
+    static DenKnownKeys instance;
+    return instance;
+}
+void DenKnownKeysClear() {
+    auto& known = DenKnownKeysInstance();
+    std::scoped_lock lock{known.mutex};
+    known.hashes.clear();
+}
+// Renvoie true si la cle est nouvelle (elle est alors memorisee), false si elle est deja connue.
+bool DenKnownKeysInsert(size_t hash) {
+    auto& known = DenKnownKeysInstance();
+    std::scoped_lock lock{known.mutex};
+    return known.hashes.insert(hash).second;
+}
+
 size_t GetTotalPipelineWorkers() {
     const size_t max_core_threads =
         std::max<size_t>(static_cast<size_t>(std::thread::hardware_concurrency()), 2ULL) - 1ULL;
@@ -645,6 +671,7 @@ void PipelineCache::LoadDiskResources(u64 title_id, std::stop_token stop_loading
         }
     }
 
+    DenKnownKeysClear();
     const auto shader_dir{Common::FS::GetEdenPath(Common::FS::EdenPath::ShaderDir)};
     const auto base_dir{shader_dir / fmt::format("{:016x}", title_id)};
     if (!Common::FS::CreateDir(shader_dir) || !Common::FS::CreateDir(base_dir)) {
@@ -700,9 +727,14 @@ void PipelineCache::LoadDiskResources(u64 title_id, std::stop_token stop_loading
         }
         return false;
     }};
+    size_t den_duplicates{};
     const auto load_compute{[&](std::ifstream& file, FileEnvironment env) {
         ComputePipelineCacheKey key;
         file.read(reinterpret_cast<char*>(&key), sizeof(key));
+        if (!DenKnownKeysInsert(static_cast<size_t>(key.Hash() ^ 0x9E3779B97F4A7C15ULL))) {
+            ++den_duplicates;
+            return;
+        }
 
         workers.QueueWork([this, key, env_ = std::move(env), &state, &callback,
                            &skip_for_memory]() mutable {
@@ -730,6 +762,10 @@ void PipelineCache::LoadDiskResources(u64 title_id, std::stop_token stop_loading
     const auto load_graphics{[&](std::ifstream& file, std::vector<FileEnvironment> envs) {
         GraphicsPipelineCacheKey key;
         file.read(reinterpret_cast<char*>(&key), sizeof(key));
+        if (!DenKnownKeysInsert(key.Hash())) {
+            ++den_duplicates;
+            return;
+        }
 
         if ((key.state.extended_dynamic_state != 0) !=
                 dynamic_features.has_extended_dynamic_state ||
@@ -792,6 +828,9 @@ void PipelineCache::LoadDiskResources(u64 title_id, std::stop_token stop_loading
                                load_graphics);
 
     LOG_INFO(Render_Vulkan, "Total Pipeline Count: {}", state.total);
+    if (den_duplicates > 0) {
+        LOG_INFO(Render_Vulkan, "[DEN] {} doublons du cache disque ignores", den_duplicates);
+    }
 
     std::unique_lock lock{state.mutex};
     callback(VideoCore::LoadCallbackStage::Build, 0, state.total);
@@ -800,6 +839,8 @@ void PipelineCache::LoadDiskResources(u64 title_id, std::stop_token stop_loading
 
     workers.WaitForRequests(stop_loading);
 
+    LOG_INFO(Render_Vulkan, "[DEN] Fin du prechargement: {} Mo disponibles, DEN utilise {} Mo",
+             DenAvailableMemoryMb(), DenProcessRssMb());
     if (state.skipped.load() > 0) {
         LOG_WARNING(Render_Vulkan,
                     "[DEN] Shader preload skipped {} of {} pipelines (low memory); they will be "
@@ -1014,6 +1055,10 @@ std::unique_ptr<GraphicsPipeline> PipelineCache::CreateGraphicsPipeline() {
     if (!pipeline || pipeline_cache_filename.empty()) {
         return pipeline;
     }
+    // DEN_CACHE_DEDUP: deja present sur disque, on ne le reecrit pas.
+    if (!DenKnownKeysInsert(graphics_key.Hash())) {
+        return pipeline;
+    }
     serialization_thread.QueueWork([this, key = graphics_key, envs = std::move(environments.envs)] {
         boost::container::static_vector<const GenericEnvironment*, Maxwell::MaxShaderProgram>
             env_ptrs;
@@ -1038,6 +1083,10 @@ std::unique_ptr<ComputePipeline> PipelineCache::CreateComputePipeline(
     main_pools.ReleaseContents();
     auto pipeline{CreateComputePipeline(main_pools, key, env, nullptr, true)};
     if (!pipeline || pipeline_cache_filename.empty()) {
+        return pipeline;
+    }
+    // DEN_CACHE_DEDUP: deja present sur disque, on ne le reecrit pas.
+    if (!DenKnownKeysInsert(static_cast<size_t>(key.Hash() ^ 0x9E3779B97F4A7C15ULL))) {
         return pipeline;
     }
     serialization_thread.QueueWork([this, key, env_ = std::move(env)] {
