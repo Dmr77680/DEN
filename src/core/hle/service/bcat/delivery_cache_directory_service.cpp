@@ -52,8 +52,12 @@ Result IDeliveryCacheDirectoryService::Open(const DirectoryName& dir_name_raw) {
     R_TRY(VerifyNameValidDir(dir_name_raw));
     R_UNLESS(current_dir == nullptr, ResultEntityAlreadyOpen);
 
-    const auto dir = root->GetSubdirectory(dir_name);
-    R_UNLESS(dir != nullptr, ResultFailedOpenEntity);
+    // DEN_BCAT_OPEN: le dossier ouvert n'etait jamais memorise, donc Read/GetCount
+    // echouaient toujours avec ResultNoOpenEntry et le jeu ne voyait aucun fichier.
+    current_dir = root->GetSubdirectory(dir_name);
+    R_UNLESS(current_dir != nullptr, ResultFailedOpenEntity);
+    LOG_INFO(Service_BCAT, "dossier '{}' ouvert, {} fichier(s)", dir_name,
+             current_dir->GetFiles().size());
 
     R_SUCCEED();
 }
@@ -73,6 +77,7 @@ Result IDeliveryCacheDirectoryService::Read(
                                    (std::min)(file->GetName().size(), name.size()));
                        return DeliveryCacheDirectoryEntry{name, file->GetSize(), DigestFile(file)};
                    });
+    LOG_INFO(Service_BCAT, "Read: {} fichier(s) renvoye(s)", *out_count);
     R_SUCCEED();
 }
 
