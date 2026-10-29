@@ -74,6 +74,7 @@ Jeux testés et qui fonctionnent en ligne :
 
 - ✅ Crash Team Racing Nitro-Fueled
 - ✅ Mario Kart 8 Deluxe
+- ✅ Splatoon 2 : parties privées en ligne (hôte et invité), y compris avec des joueurs sur Citron. Désactive le chat vocal du jeu pour héberger. Le jeu a besoin de ses fichiers de données en ligne (BCAT), non fournis avec DEN
 - ✅ Super Mario Party
 - ✅ Super Mario Maker 2
 - ✅ Super Mario Party Jamboree
@@ -188,6 +189,7 @@ Games tested and working online:
 
 - ✅ Crash Team Racing Nitro-Fueled
 - ✅ Mario Kart 8 Deluxe
+- ✅ Splatoon 2: online private battles (host and guest), including with players on Citron. Turn off the in-game voice chat to host. The game needs its online data files (BCAT), which are not included with DEN
 - ✅ Super Mario Party
 - ✅ Super Mario Maker 2
 - ✅ Super Mario Party Jamboree
