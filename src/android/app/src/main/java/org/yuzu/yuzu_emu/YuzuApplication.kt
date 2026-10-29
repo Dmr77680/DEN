@@ -73,6 +73,7 @@ class YuzuApplication : Application() {
         NativeLibrary.logDeviceInfo()
         PowerStateUpdater.start()
         Log.logDeviceInfo()
+        org.yuzu.yuzu_emu.utils.ExitReasonLogger.log(this) // DEN_EXIT_REASON
         ControllerNavigationGlobalHook.install(this)
 
         createNotificationChannels()

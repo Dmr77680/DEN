@@ -18,6 +18,10 @@
 #include <string>
 #include <string_view>
 #include <thread>
+#include <atomic>
+#include <chrono>
+#include <fstream>
+#include <mutex>
 #include <vector>
 #include <dlfcn.h>
 #include <unistd.h>
@@ -1351,13 +1355,65 @@ jboolean Java_org_yuzu_yuzu_1emu_NativeLibrary_isSlowMode(JNIEnv *env, jobject j
     return Settings::values.current_speed_mode.GetValue() == Settings::SpeedMode::Slow;
 }
 
+// DEN_MEM_MONITOR: pendant qu'un jeu est charge ou lance, ecrit la memoire du telephone et de DEN
+// dans le journal toutes les quelques secondes, et vide le journal sur le disque a chaque fois.
+// Ainsi, si Android ferme l'appli, les dernieres lignes montrent l'etat de la memoire juste avant.
+static std::atomic<bool> g_den_game_active{false};
+
+static long long DenReadKb(const char* path, const char* key) {
+    std::ifstream file{path};
+    std::string line;
+    const size_t key_len = std::strlen(key);
+    while (std::getline(file, line)) {
+        if (line.compare(0, key_len, key) == 0) {
+            long long kb = 0;
+            if (std::sscanf(line.c_str() + key_len, " %lld", &kb) == 1) {
+                return kb;
+            }
+            return -1;
+        }
+    }
+    return -1;
+}
+
+static long long DenKbToMb(long long kb) {
+    return kb < 0 ? -1 : kb / 1024;
+}
+
+static void DenStartMemoryMonitor() {
+    static std::once_flag once;
+    std::call_once(once, [] {
+        std::thread([] {
+            for (;;) {
+                const long long available = DenReadKb("/proc/meminfo", "MemAvailable:");
+                if (g_den_game_active.load(std::memory_order_relaxed)) {
+                    LOG_INFO(Frontend,
+                             "[DEN] Memoire: disponible {} Mo, libre {} Mo, swap libre {} Mo | "
+                             "DEN {} Mo (pic {} Mo, swap {} Mo)",
+                             DenKbToMb(available),
+                             DenKbToMb(DenReadKb("/proc/meminfo", "MemFree:")),
+                             DenKbToMb(DenReadKb("/proc/meminfo", "SwapFree:")),
+                             DenKbToMb(DenReadKb("/proc/self/status", "VmRSS:")),
+                             DenKbToMb(DenReadKb("/proc/self/status", "VmHWM:")),
+                             DenKbToMb(DenReadKb("/proc/self/status", "VmSwap:")));
+                    Common::Log::Stop();
+                }
+                const bool tight = available >= 0 && available < 1500 * 1024;
+                std::this_thread::sleep_for(std::chrono::seconds(tight ? 1 : 3));
+            }
+        }).detach();
+    });
+}
+
 void Java_org_yuzu_yuzu_1emu_NativeLibrary_run(JNIEnv* env, jobject jobj, jstring j_path,
                                                jint j_program_index,
                                                jboolean j_frontend_initiated) {
     const std::string path = Common::Android::GetJString(env, j_path);
 
+    g_den_game_active.store(true);
     const Core::SystemResultStatus result{
         RunEmulation(path, j_program_index, j_frontend_initiated)};
+    g_den_game_active.store(false);
     if (result != Core::SystemResultStatus::Success) {
         env->CallStaticVoidMethod(Common::Android::GetNativeLibraryClass(),
                                   Common::Android::GetExitEmulationActivity(),
@@ -1368,6 +1424,7 @@ void Java_org_yuzu_yuzu_1emu_NativeLibrary_run(JNIEnv* env, jobject jobj, jstrin
 void Java_org_yuzu_yuzu_1emu_NativeLibrary_logDeviceInfo(JNIEnv* env, jclass clazz) {
     LOG_INFO(Frontend, "eden Version: {}-{}", Common::g_scm_branch, Common::g_scm_desc);
     LOG_INFO(Frontend, "Host OS: Android API level {}", android_get_device_api_level());
+    DenStartMemoryMonitor();
 }
 
 void Java_org_yuzu_yuzu_1emu_NativeLibrary_submitInlineKeyboardText(JNIEnv* env, jclass clazz,
